@@ -1,0 +1,1160 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --forest-green: #234735;
+  --soft-beige: #ded5c4;
+  --pastel-forest-green: #b7c9b0;
+  --soft-sage: #d8e3d2;
+  --off-white: #f8f6f0;
+  --white: #fff;
+  --expiration-brown: #70411f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--soft-beige);
+}
+
+.site-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 4.5rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--forest-green);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  color: var(--white);
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.brand-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.menu-toggle {
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--white);
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus-visible {
+  background: rgb(255 255 255 / 12%);
+}
+
+.menu-toggle:focus-visible,
+.navigation-item:focus-visible,
+.navigation-close:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+.navigation-overlay {
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: rgb(0 0 0 / 52%);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 300ms ease,
+    visibility 300ms ease;
+}
+
+.navigation-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.site-navigation {
+  position: fixed;
+  z-index: 3;
+  inset: 0 0 0 auto;
+  width: min(80vw, 320px);
+  min-width: min(75vw, 320px);
+  padding: 1.25rem;
+  overflow-y: auto;
+  background: var(--forest-green);
+  color: var(--white);
+  box-shadow: -0.75rem 0 2rem rgb(0 0 0 / 16%);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform 300ms ease,
+    visibility 300ms ease;
+}
+
+.site-navigation.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.navigation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgb(255 255 255 / 20%);
+}
+
+.navigation-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.navigation-close {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--white);
+  font: inherit;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.navigation-close:hover,
+.navigation-close:focus-visible {
+  background: rgb(255 255 255 / 12%);
+}
+
+.navigation-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-bottom: 0.375rem;
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--white);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navigation-item:hover,
+.navigation-item:focus-visible {
+  background: rgb(255 255 255 / 12%);
+}
+
+.navigation-item svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.screen-content {
+  width: min(100% - 2.5rem, 40rem);
+  margin: 0 auto;
+  padding-block: 3rem;
+  color: var(--forest-green);
+  text-align: center;
+}
+
+.screen-content h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.screen-content p {
+  margin: 0.75rem 0 0;
+  color: rgb(35 71 53 / 75%);
+}
+
+.screen-content.is-fridge-screen {
+  padding-block-start: 1.25rem;
+}
+
+.screen-content.is-profile-screen {
+  padding-block-start: 1.25rem;
+}
+
+.profile-screen {
+  display: grid;
+  justify-items: center;
+  gap: 1.5rem;
+}
+
+.profile-screen > h2 {
+  width: 100%;
+}
+
+.profile-card {
+  display: flex;
+  width: 100%;
+  min-height: 7rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--pastel-forest-green);
+  text-align: left;
+}
+
+.profile-avatar {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--soft-sage);
+  color: var(--forest-green);
+}
+
+.profile-avatar svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.profile-name {
+  margin: 0;
+  color: var(--forest-green);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.profile-settings {
+  display: grid;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.profile-setting-row {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) 1.25rem;
+  min-height: 4rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.875rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  text-align: left;
+}
+
+button.profile-setting-row {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+button.profile-setting-row:hover {
+  background: #f0eee7;
+}
+
+button.profile-setting-row:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 3px;
+}
+
+.profile-setting-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--soft-sage);
+}
+
+.profile-setting-icon svg,
+.profile-setting-arrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.profile-setting-label {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.profile-setting-value {
+  min-width: 0;
+  color: rgb(35 71 53 / 72%);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.profile-setting-arrow {
+  color: rgb(35 71 53 / 70%);
+}
+
+.screen-content.is-dietary-screen {
+  padding-block-start: 1.25rem;
+}
+
+.dietary-preferences-screen {
+  display: grid;
+  justify-items: center;
+  gap: 1.5rem;
+}
+
+.dietary-preferences-screen > h2,
+.dietary-preferences-question {
+  width: 100%;
+}
+
+.screen-content .dietary-preferences-question {
+  margin: -0.75rem 0 0;
+  color: rgb(35 71 53 / 78%);
+  font-size: 1rem;
+  text-align: left;
+}
+
+.dietary-preferences-form {
+  display: grid;
+  width: 100%;
+  gap: 1.25rem;
+}
+
+.dietary-preferences-options {
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.dietary-preferences-options legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.dietary-preference-option {
+  display: flex;
+  min-height: 3.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgb(35 71 53 / 10%);
+  border-radius: 0.875rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.dietary-preference-option:has(input:checked) {
+  border-color: var(--forest-green);
+  background: var(--soft-sage);
+}
+
+.dietary-preference-option input {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+  margin: 0;
+  accent-color: var(--forest-green);
+}
+
+.dietary-preference-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.dietary-preference-description {
+  color: rgb(35 71 53 / 76%);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.dietary-preference-option:focus-within {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 2px;
+}
+
+.custom-allergies {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  background: var(--pastel-forest-green);
+}
+
+.custom-allergies h3 {
+  margin: 0;
+  color: var(--forest-green);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.custom-allergy-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.custom-allergy-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgb(35 71 53 / 24%);
+  border-radius: 0.625rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  font: inherit;
+}
+
+.custom-allergy-input:focus-visible,
+.custom-allergy-add:focus-visible,
+.custom-allergy-remove:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 2px;
+}
+
+.custom-allergy-add {
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: var(--forest-green);
+  color: var(--white);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.custom-allergy-add:hover {
+  background: #193628;
+}
+
+.custom-allergy-error {
+  min-height: 1.25rem;
+  margin: 0;
+  color: #70411f;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.custom-allergy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.custom-allergy-tag {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.375rem 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--soft-sage);
+  color: var(--forest-green);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.custom-allergy-tag > span {
+  min-width: 0;
+}
+
+.custom-allergy-remove {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--forest-green);
+  font: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.custom-allergy-remove:hover {
+  background: rgb(35 71 53 / 10%);
+}
+
+.dietary-preferences-save {
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--forest-green);
+  color: var(--white);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.dietary-preferences-save:hover {
+  background: #193628;
+}
+
+.dietary-preferences-save:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 3px;
+}
+
+.fridge-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.fridge-screen h2 {
+  margin: 0;
+}
+
+.screen-content .fridge-ingredient-count {
+  width: 100%;
+  margin: 2rem 0 1rem;
+  color: var(--forest-green);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.fridge-ingredient-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  width: 100%;
+}
+
+.fridge-ingredient-card {
+  display: flex;
+  min-width: 0;
+  min-height: 9.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--off-white);
+  box-shadow: 0 0.375rem 1rem rgb(35 71 53 / 7%);
+  text-align: left;
+}
+
+.fridge-ingredient-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  margin-bottom: 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--soft-sage);
+  font-size: 1.375rem;
+}
+
+.fridge-ingredient-name {
+  width: 100%;
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--forest-green);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.screen-content .fridge-ingredient-expiration {
+  margin: 0.375rem 0 0;
+  color: var(--forest-green);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.fridge-ingredient-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin: auto 0 0 -0.25rem;
+  padding-top: 0.875rem;
+}
+
+.ingredient-action {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: var(--soft-sage);
+  color: var(--forest-green);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.ingredient-action:hover {
+  background: var(--pastel-forest-green);
+}
+
+.ingredient-action svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.ingredient-action-delete {
+  background: #f6e8e4;
+  color: #8b3a32;
+}
+
+.ingredient-action-delete:hover {
+  background: #efd4ce;
+}
+
+.ingredient-action:focus-visible,
+.delete-confirm-button:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 2px;
+}
+
+.add-food-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 1rem auto;
+  padding: 0.625rem 1rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: var(--forest-green);
+  color: var(--white);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.add-food-button:hover,
+.add-food-submit:hover {
+  background: #193628;
+}
+
+.add-food-button:focus-visible,
+.add-food-cancel:focus-visible,
+.add-food-submit:focus-visible,
+.add-food-form :is(select, input):focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 3px;
+}
+
+.add-food-dialog {
+  width: min(100% - 2rem, 28rem);
+  max-width: none;
+  max-height: min(90vh, 42rem);
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 24%);
+}
+
+.add-food-dialog::backdrop {
+  background: rgb(20 31 24 / 56%);
+  backdrop-filter: blur(2px);
+}
+
+.delete-confirmation-dialog {
+  width: min(100% - 2rem, 26rem);
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 24%);
+}
+
+.delete-confirmation-dialog::backdrop {
+  background: rgb(20 31 24 / 56%);
+  backdrop-filter: blur(2px);
+}
+
+.delete-confirmation-content {
+  padding: 1.5rem;
+}
+
+.delete-confirmation-content h2 {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+
+.delete-confirmation-content p {
+  margin: 0.75rem 0 0;
+  color: rgb(35 71 53 / 80%);
+  line-height: 1.5;
+}
+
+.add-food-form {
+  display: grid;
+  gap: 0.625rem;
+  padding: 1.5rem;
+}
+
+.add-food-form h2 {
+  margin: 0 0 0.75rem;
+  color: var(--forest-green);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.add-food-form label {
+  margin-top: 0.5rem;
+  color: var(--forest-green);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.add-food-form select,
+.add-food-form input {
+  width: 100%;
+  min-height: 2.875rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgb(35 71 53 / 24%);
+  border-radius: 0.625rem;
+  background: var(--white);
+  color: var(--forest-green);
+  font: inherit;
+}
+
+.add-food-form select:focus-visible,
+.add-food-form input:focus-visible {
+  outline-offset: 1px;
+}
+
+.add-food-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.add-food-cancel,
+.add-food-submit {
+  min-height: 2.875rem;
+  padding: 0.625rem 0.75rem;
+  border: 0;
+  border-radius: 0.625rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-food-cancel {
+  background: var(--soft-sage);
+  color: var(--forest-green);
+}
+
+.add-food-cancel:hover {
+  background: var(--pastel-forest-green);
+}
+
+.add-food-submit {
+  background: var(--forest-green);
+  color: var(--white);
+}
+
+.delete-confirm-button {
+  min-height: 2.875rem;
+  padding: 0.625rem 0.75rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: #8b3a32;
+  color: var(--white);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-confirm-button:hover {
+  background: #722d27;
+}
+
+.screen-back-button {
+  position: fixed;
+  top: calc(4.5rem + 1.25rem);
+  left: 1.25rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.screen-back-button:hover {
+  background: var(--white);
+}
+
+.screen-back-button:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 3px;
+}
+
+.screen-back-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.welcome {
+  padding-block: 0.75rem 2rem;
+  text-align: left;
+}
+
+.welcome h2 {
+  font-size: clamp(2rem, 8vw, 3rem);
+  line-height: 1.15;
+}
+
+.welcome p {
+  max-width: 34rem;
+  margin-top: 1rem;
+  font-size: clamp(1.05rem, 4vw, 1.25rem);
+  line-height: 1.65;
+}
+
+.fridge-preview {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--off-white);
+  box-shadow: 0 0.5rem 1.5rem rgb(35 71 53 / 8%);
+  text-align: left;
+}
+
+.fridge-preview-icon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: rgb(35 71 53 / 8%);
+  color: var(--forest-green);
+}
+
+.fridge-preview-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.fridge-preview-details h2 {
+  font-size: 1.125rem;
+}
+
+.fridge-preview-details p {
+  margin-top: 0.35rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.fridge-preview-button {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 2.875rem;
+  padding: 0.625rem 1rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: var(--forest-green);
+  color: var(--white);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.fridge-preview-button:hover {
+  background: #193628;
+}
+
+.fridge-preview-button:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 3px;
+}
+
+.fridge-preview-button svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.use-first {
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.use-first-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.use-first-header h2 {
+  font-size: 1.375rem;
+}
+
+.use-first-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--forest-green);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.use-first-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.use-first-link:focus-visible {
+  border-radius: 0.2rem;
+  outline: 2px solid var(--forest-green);
+  outline-offset: 3px;
+}
+
+.use-first-link svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.ingredient-list {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  background: var(--pastel-forest-green);
+  box-shadow: 0 0.5rem 1.5rem rgb(35 71 53 / 8%);
+  list-style: none;
+}
+
+.ingredient-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+  padding: 0.875rem 0;
+}
+
+.ingredient-empty-state {
+  padding: 1.25rem 0.5rem;
+  color: var(--forest-green);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.ingredient-item + .ingredient-item {
+  border-top: 1px solid rgb(35 71 53 / 12%);
+}
+
+.ingredient-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--soft-sage);
+  font-size: 1.375rem;
+}
+
+.ingredient-details {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.ingredient-name {
+  color: var(--forest-green);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ingredient-expiration {
+  color: var(--expiration-brown);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+  .site-header {
+    min-height: 5rem;
+    padding-inline: 2rem;
+  }
+
+  .brand {
+    font-size: 1.25rem;
+  }
+
+  .screen-back-button {
+    top: calc(5rem + 1.25rem);
+  }
+
+  .fridge-preview {
+    grid-template-columns: auto 1fr auto;
+    gap: 1.25rem;
+    padding: 1.5rem;
+  }
+
+  .fridge-preview-button {
+    grid-column: auto;
+  }
+
+  .fridge-ingredient-grid {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 1rem;
+  }
+
+  .fridge-ingredient-card {
+    min-height: 10rem;
+    padding: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation-overlay,
+  .site-navigation {
+    transition-duration: 0.01ms;
+  }
+}

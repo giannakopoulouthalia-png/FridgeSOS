@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="What's In Your Fridge? — a simple place to start."
+    />
+    <title>What's In Your Fridge?</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1 class="brand">
+        <svg
+          class="brand-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <rect x="5.5" y="2.5" width="13" height="19" rx="2" />
+          <path d="M5.5 11h13M9 6.5v2M9 14.5v3" />
+        </svg>
+        <span>What's In Your Fridge?</span>
+      </h1>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+        aria-controls="site-navigation"
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
+    </header>
+    <button
+      class="navigation-overlay"
+      type="button"
+      aria-label="Close navigation menu"
+      aria-hidden="true"
+      tabindex="-1"
+      inert
+    ></button>
+    <aside
+      class="site-navigation"
+      id="site-navigation"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Main navigation"
+      aria-hidden="true"
+      inert
+    >
+      <div class="navigation-header">
+        <span class="navigation-title">Menu</span>
+        <button class="navigation-close" type="button" aria-label="Close navigation menu">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <nav aria-label="Main navigation">
+        <button class="navigation-item" type="button" data-screen="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg>
+          <span>Home</span>
+        </button>
+        <button class="navigation-item" type="button" data-screen="My Fridge">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" /><path d="M5 11h14M9 6v2m0 7v2" /></svg>
+          <span>My Fridge</span>
+        </button>
+        <button class="navigation-item" type="button" data-screen="Find Recipes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5M8 10.5h5m-2.5-2.5v5" /></svg>
+          <span>Find Recipes</span>
+        </button>
+        <button class="navigation-item" type="button" data-screen="Saved Recipes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg>
+          <span>Saved Recipes</span>
+        </button>
+        <button class="navigation-item" type="button" data-screen="Profile">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+          <span>Profile</span>
+        </button>
+      </nav>
+    </aside>
+    <main class="screen-content" id="screen-content" aria-live="polite">
+      <section class="welcome" aria-labelledby="welcome-heading">
+        <h2 id="welcome-heading">Hey there! 👋</h2>
+        <p>Let's make something delicious with what you already have.</p>
+      </section>
+      <section class="fridge-preview" aria-labelledby="fridge-preview-title">
+        <div class="fridge-preview-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="5.5" y="2.5" width="13" height="19" rx="2" />
+            <path d="M5.5 11h13M9 6.5v2M9 14.5v3" />
+          </svg>
+        </div>
+        <div class="fridge-preview-details">
+          <h2 id="fridge-preview-title">My Fridge</h2>
+          <p><span id="ingredient-count"></span> ingredients available</p>
+        </div>
+        <button class="fridge-preview-button" type="button" data-screen="My Fridge">
+          <span>View My Fridge</span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" />
+          </svg>
+        </button>
+      </section>
+      <section class="use-first" aria-labelledby="use-first-heading">
+        <div class="use-first-header">
+          <h2 id="use-first-heading">Use Me First!</h2>
+          <button class="use-first-link" type="button" data-screen="My Fridge">
+            See all
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+        <ul class="ingredient-list" id="ingredient-list"></ul>
+      </section>
+    </main>
+    <dialog class="add-food-dialog" id="add-food-dialog" aria-labelledby="add-food-title">
+      <form class="add-food-form" id="add-food-form">
+        <h2 id="add-food-title">Add Food</h2>
+        <label for="food-category">Food Category</label>
+        <select id="food-category" name="category" required>
+          <option value="" selected disabled>Select a category</option>
+          <option value="Dairy">Dairy</option>
+          <option value="Vegetables">Vegetables</option>
+          <option value="Fruits">Fruits</option>
+          <option value="Meat">Meat</option>
+          <option value="Seafood">Seafood</option>
+          <option value="Grains">Grains</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label for="food-name">Food Name</label>
+        <input
+          id="food-name"
+          name="name"
+          type="text"
+          placeholder="e.g. Milk, Tomatoes, Chicken"
+          required
+        />
+
+        <label for="expiration-date">Expiration Date</label>
+        <input id="expiration-date" name="expirationDate" type="date" required />
+
+        <div class="add-food-actions">
+          <button class="add-food-cancel" type="button" id="cancel-add-food">Cancel</button>
+          <button class="add-food-submit" type="submit">Add to My Fridge</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      class="delete-confirmation-dialog"
+      id="delete-confirmation-dialog"
+      aria-labelledby="delete-confirmation-title"
+      aria-describedby="delete-confirmation-message"
+    >
+      <div class="delete-confirmation-content">
+        <h2 id="delete-confirmation-title">Delete ingredient?</h2>
+        <p id="delete-confirmation-message"></p>
+        <div class="add-food-actions">
+          <button class="add-food-cancel" type="button" id="cancel-delete">Cancel</button>
+          <button class="delete-confirm-button" type="button" id="confirm-delete">Delete</button>
+        </div>
+      </div>
+    </dialog>
+    <script src="script.js" defer></script>
+  </body>
+</html>
