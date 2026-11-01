@@ -38,6 +38,12 @@ let cookingSkillLevel = null;
 let foodAllergies = [];
 let customFoodAllergies = [];
 let draftCustomFoodAllergies = [];
+let profileDetails = {
+  name: "",
+  username: "",
+  gender: "",
+  selfDescribedGender: "",
+};
 const homeScreenContent = Array.from(screenContent.children, (element) =>
   element.cloneNode(true),
 );
@@ -296,7 +302,10 @@ function createProfileScreen() {
   const profileScreen = document.createElement("section");
   const heading = document.createElement("h2");
   const profileCard = document.createElement("div");
+  const profileDetailsContainer = document.createElement("div");
   const profileName = document.createElement("h3");
+  const profileUsername = document.createElement("p");
+  const editProfileButton = document.createElement("button");
   const settings = document.createElement("div");
   const profileIcon = createProfileIcon(
     "M20 21a8 8 0 0 0-16 0m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
@@ -322,9 +331,20 @@ function createProfileScreen() {
   profileScreen.className = "profile-screen";
   heading.textContent = "My Profile";
   profileCard.className = "profile-card";
+  profileDetailsContainer.className = "profile-card-details";
   profileName.className = "profile-name";
-  profileName.textContent = "Guest User";
-  profileCard.append(profileIcon, profileName);
+  profileName.textContent = profileDetails.name || "Guest User";
+  profileUsername.className = "profile-username";
+  profileUsername.textContent = profileDetails.username
+    ? `@${profileDetails.username}`
+    : "";
+  profileUsername.hidden = !profileDetails.username;
+  editProfileButton.className = "edit-profile-button";
+  editProfileButton.type = "button";
+  editProfileButton.dataset.screen = "Edit Profile";
+  editProfileButton.textContent = "Edit Profile";
+  profileDetailsContainer.append(profileName, profileUsername, editProfileButton);
+  profileCard.append(profileIcon, profileDetailsContainer);
   settings.className = "profile-settings";
 
   for (const setting of settingItems) {
@@ -358,6 +378,99 @@ function createProfileScreen() {
 
   profileScreen.append(createProfileBackButton(), heading, profileCard, settings);
   return profileScreen;
+}
+
+function createEditProfileScreen() {
+  const editProfileScreen = document.createElement("section");
+  const heading = document.createElement("h2");
+  const form = document.createElement("form");
+  const nameLabel = document.createElement("label");
+  const nameInput = document.createElement("input");
+  const usernameLabel = document.createElement("label");
+  const usernameInput = document.createElement("input");
+  const genderLabel = document.createElement("label");
+  const genderSelect = document.createElement("select");
+  const genderPlaceholder = document.createElement("option");
+  const genderChoices = [
+    "Female",
+    "Male",
+    "Non-binary",
+    "Prefer not to say",
+    "Self-describe",
+  ];
+  const selfDescriptionField = document.createElement("div");
+  const selfDescriptionLabel = document.createElement("label");
+  const selfDescriptionInput = document.createElement("input");
+  const saveButton = document.createElement("button");
+
+  editProfileScreen.className = "dietary-preferences-screen";
+  heading.textContent = "Edit Profile";
+  form.className = "edit-profile-form";
+  form.dataset.form = "edit-profile";
+
+  nameLabel.htmlFor = "profile-name";
+  nameLabel.textContent = "Name";
+  nameInput.id = "profile-name";
+  nameInput.name = "name";
+  nameInput.type = "text";
+  nameInput.autocomplete = "name";
+  nameInput.required = true;
+  nameInput.value = profileDetails.name;
+
+  usernameLabel.htmlFor = "profile-username";
+  usernameLabel.textContent = "Username";
+  usernameInput.id = "profile-username";
+  usernameInput.name = "username";
+  usernameInput.type = "text";
+  usernameInput.autocomplete = "username";
+  usernameInput.required = true;
+  usernameInput.value = profileDetails.username;
+
+  genderLabel.htmlFor = "profile-gender";
+  genderLabel.textContent = "Gender (optional)";
+  genderSelect.id = "profile-gender";
+  genderSelect.name = "gender";
+  genderPlaceholder.value = "";
+  genderPlaceholder.textContent = "Select an option";
+  genderSelect.append(genderPlaceholder);
+  for (const gender of genderChoices) {
+    const option = document.createElement("option");
+    option.value = gender;
+    option.textContent = gender;
+    genderSelect.append(option);
+  }
+  genderSelect.value = profileDetails.gender;
+
+  selfDescriptionField.className = "edit-profile-self-description";
+  selfDescriptionField.hidden = profileDetails.gender !== "Self-describe";
+  selfDescriptionLabel.htmlFor = "profile-self-described-gender";
+  selfDescriptionLabel.textContent = "Describe your gender (optional)";
+  selfDescriptionInput.id = "profile-self-described-gender";
+  selfDescriptionInput.name = "selfDescribedGender";
+  selfDescriptionInput.type = "text";
+  selfDescriptionInput.autocomplete = "off";
+  selfDescriptionInput.value = profileDetails.selfDescribedGender;
+  selfDescriptionField.append(selfDescriptionLabel, selfDescriptionInput);
+
+  saveButton.className = "dietary-preferences-save";
+  saveButton.type = "submit";
+  saveButton.textContent = "Save Profile";
+  form.append(
+    nameLabel,
+    nameInput,
+    usernameLabel,
+    usernameInput,
+    genderLabel,
+    genderSelect,
+    selfDescriptionField,
+    saveButton,
+  );
+  editProfileScreen.append(
+    createProfileBackButton("Profile"),
+    heading,
+    form,
+  );
+  return editProfileScreen;
 }
 
 function createDietaryPreferencesScreen() {
@@ -601,6 +714,13 @@ function showScreen(screenName) {
     return;
   }
 
+  if (screenName === "Edit Profile") {
+    screenContent.classList.remove("is-fridge-screen");
+    screenContent.classList.add("is-profile-screen", "is-dietary-screen");
+    screenContent.replaceChildren(createEditProfileScreen());
+    return;
+  }
+
   if (screenName === "Dietary Preferences") {
     screenContent.classList.remove("is-fridge-screen");
     screenContent.classList.add("is-profile-screen", "is-dietary-screen");
@@ -789,7 +909,7 @@ screenContent.addEventListener("click", (event) => {
 
 screenContent.addEventListener("submit", (event) => {
   const preferenceForm = event.target.closest(
-    '[data-form="dietary-preferences"], [data-form="cooking-time"], [data-form="food-allergies"], [data-form="cooking-skill"]',
+    '[data-form="edit-profile"], [data-form="dietary-preferences"], [data-form="cooking-time"], [data-form="food-allergies"], [data-form="cooking-skill"]',
   );
 
   if (!preferenceForm) {
@@ -799,6 +919,31 @@ screenContent.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(preferenceForm);
   const formName = preferenceForm.dataset.form;
+
+  if (formName === "edit-profile") {
+    const nameInput = preferenceForm.querySelector("#profile-name");
+    const usernameInput = preferenceForm.querySelector("#profile-username");
+    const name = nameInput.value.trim();
+    const username = usernameInput.value.trim();
+
+    nameInput.setCustomValidity(name ? "" : "Enter your name.");
+    usernameInput.setCustomValidity(username ? "" : "Enter your username.");
+
+    if (!preferenceForm.reportValidity()) {
+      return;
+    }
+
+    profileDetails = {
+      name,
+      username,
+      gender: formData.get("gender"),
+      selfDescribedGender: formData.get("gender") === "Self-describe"
+        ? formData.get("selfDescribedGender").trim()
+        : "",
+    };
+    showScreen("Profile");
+    return;
+  }
 
   if (formName === "food-allergies") {
     foodAllergies = formData.getAll("foodAllergies");
@@ -830,6 +975,19 @@ screenContent.addEventListener("submit", (event) => {
     dietaryPreference = selectedPreference;
   }
   showScreen("Profile");
+});
+
+screenContent.addEventListener("input", (event) => {
+  if (event.target.matches("#profile-name, #profile-username")) {
+    event.target.setCustomValidity("");
+  }
+});
+
+screenContent.addEventListener("change", (event) => {
+  if (event.target.matches("#profile-gender")) {
+    screenContent.querySelector(".edit-profile-self-description").hidden =
+      event.target.value !== "Self-describe";
+  }
 });
 
 screenContent.addEventListener("keydown", (event) => {

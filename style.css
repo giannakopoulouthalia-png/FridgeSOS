@@ -279,6 +279,43 @@ body {
   font-weight: 600;
 }
 
+.profile-card-details {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  gap: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.profile-username {
+  color: rgb(35 71 53 / 76%);
+  font-size: 0.875rem;
+}
+
+.edit-profile-button {
+  min-height: 2.5rem;
+  margin-top: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid rgb(35 71 53 / 24%);
+  border-radius: 0.625rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.edit-profile-button:hover {
+  background: var(--white);
+}
+
+.edit-profile-button:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 2px;
+}
+
 .profile-settings {
   display: grid;
   width: 100%;
@@ -382,6 +419,49 @@ button.profile-setting-row:focus-visible {
   display: grid;
   width: 100%;
   gap: 1.25rem;
+}
+
+.edit-profile-form {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 0.625rem;
+}
+
+.edit-profile-form > label,
+.edit-profile-self-description > label {
+  margin-top: 0.5rem;
+  color: var(--forest-green);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.edit-profile-form input,
+.edit-profile-form select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.875rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgb(35 71 53 / 24%);
+  border-radius: 0.625rem;
+  background: var(--off-white);
+  color: var(--forest-green);
+  font: inherit;
+}
+
+.edit-profile-form input:focus-visible,
+.edit-profile-form select:focus-visible {
+  outline: 2px solid var(--forest-green);
+  outline-offset: 2px;
+}
+
+.edit-profile-self-description {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.edit-profile-self-description[hidden] {
+  display: none;
 }
 
 .dietary-preferences-options {
