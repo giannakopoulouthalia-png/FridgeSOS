@@ -35,6 +35,11 @@ let deletingIngredientId = null;
 let dietaryPreference = null;
 let preferredCookingTime = null;
 let cookingSkillLevel = null;
+let recipeBudget = 5;
+let recipeServings = 2;
+let recipePresetServings = 2;
+let recipeCustomServingsEnabled = false;
+let recipeStatusTimeout;
 let foodAllergies = [];
 let customFoodAllergies = [];
 let draftCustomFoodAllergies = [];
@@ -101,6 +106,33 @@ function getSortedIngredients() {
     .sort((first, second) => first.expirationDate - second.expirationDate);
 }
 
+function getExpiringSoonIngredients() {
+  return getSortedIngredients().filter((ingredient) => {
+    const daysUntilExpiration = getDaysUntilExpiration(ingredient.expirationDate);
+    return daysUntilExpiration >= 0 && daysUntilExpiration <= 3;
+  });
+}
+
+function updateFridgeEmergency() {
+  const count = screenContent.querySelector("#urgent-ingredient-count");
+  const message = screenContent.querySelector("#fridge-emergency-message");
+  const card = screenContent.querySelector(".fridge-emergency");
+
+  if (!count || !message || !card) {
+    return;
+  }
+
+  const expiringSoonCount = getExpiringSoonIngredients().length;
+  count.textContent = `${expiringSoonCount} ingredient${
+    expiringSoonCount === 1 ? "" : "s"
+  } expiring in the next 3 days`;
+  message.textContent =
+    expiringSoonCount === 0
+      ? "Your fridge is in the clear. Nice job keeping food from going to waste!"
+      : "Let's turn your soon-to-expire ingredients into something delicious.";
+  card.classList.toggle("is-all-clear", expiringSoonCount === 0);
+}
+
 function renderUseFirst() {
   const ingredientList = screenContent.querySelector("#ingredient-list");
 
@@ -108,10 +140,8 @@ function renderUseFirst() {
     return;
   }
 
-  const expiringSoon = getSortedIngredients().filter((ingredient) => {
-    const daysUntilExpiration = getDaysUntilExpiration(ingredient.expirationDate);
-    return daysUntilExpiration >= 0 && daysUntilExpiration <= 3;
-  });
+  const expiringSoon = getExpiringSoonIngredients();
+  updateFridgeEmergency();
 
   if (expiringSoon.length === 0) {
     const emptyState = document.createElement("li");
@@ -224,9 +254,16 @@ function updateFridgeCount() {
 function refreshIngredientViews() {
   const ingredientGrid = screenContent.querySelector(".fridge-ingredient-grid");
   const ingredientCount = screenContent.querySelector(".fridge-ingredient-count");
+  const homeEmergencyCard = homeScreenContent.find((element) =>
+    element.matches(".fridge-emergency"),
+  );
 
   if (ingredientGrid && ingredientCount) {
     renderFridgeIngredients(ingredientGrid, ingredientCount);
+  }
+
+  if (homeEmergencyCard) {
+    updateFridgeEmergency(homeEmergencyCard);
   }
 
   updateFridgeCount();
@@ -587,6 +624,226 @@ function renderCustomAllergyTags(container, allergies) {
   );
 }
 
+function createRecipesScreen() {
+  const recipesScreen = document.createElement("section");
+  const heading = document.createElement("h2");
+  const subtitle = document.createElement("p");
+  const form = document.createElement("form");
+  const budgetField = document.createElement("div");
+  const budgetLabel = document.createElement("label");
+  const budgetValue = document.createElement("output");
+  const budgetInput = document.createElement("input");
+  const budgetHint = document.createElement("p");
+  const servingsField = document.createElement("div");
+  const servingsLabel = document.createElement("label");
+  const servingsSelect = document.createElement("select");
+  const customServingsToggleLabel = document.createElement("label");
+  const customServingsToggle = document.createElement("input");
+  const customServingsLabel = document.createElement("label");
+  const customServingsPanel = document.createElement("div");
+  const customServingsInput = document.createElement("input");
+  const customServingsError = document.createElement("p");
+  const servingsOptions = [1, 2, 3, 4].map((servings) => {
+    const option = document.createElement("option");
+    option.value = String(servings);
+    option.textContent = String(servings);
+    return option;
+  });
+  const profileCard = document.createElement("aside");
+  const profileHeading = document.createElement("h3");
+  const profileMessage = document.createElement("p");
+  const profileList = document.createElement("ul");
+  const profilePreferences = [
+    ["Dietary preferences", dietaryPreference || "Not set"],
+    [
+      "Food allergies",
+      [...foodAllergies, ...customFoodAllergies].join(", ") || "None",
+    ],
+    ["Preferred cooking time", preferredCookingTime || "Not set"],
+    ["Cooking skill level", cookingSkillLevel || "Not set"],
+  ];
+  const submitButton = document.createElement("button");
+  const status = document.createElement("p");
+
+  recipesScreen.className = "recipes-screen";
+  heading.textContent = "Let's rescue your food!";
+  subtitle.className = "recipes-subtitle";
+  subtitle.textContent = "Tell us a little about today's meal.";
+
+  form.className = "recipes-form";
+  form.dataset.form = "recipe-personalization";
+
+  budgetField.className = "recipe-form-field";
+  budgetLabel.htmlFor = "recipe-budget";
+  budgetLabel.textContent = "Extra Ingredients Budget";
+  budgetValue.id = "recipe-budget-value";
+  budgetValue.htmlFor = "recipe-budget";
+  budgetValue.className = "recipe-budget-value";
+  budgetValue.setAttribute("aria-live", "polite");
+  budgetValue.textContent = `€${recipeBudget}`;
+  budgetInput.id = "recipe-budget";
+  budgetInput.name = "budget";
+  budgetInput.type = "range";
+  budgetInput.min = "0";
+  budgetInput.max = "20";
+  budgetInput.step = "1";
+  budgetInput.value = String(recipeBudget);
+  budgetInput.setAttribute("aria-describedby", "recipe-budget-hint");
+  const updateBudget = () => {
+    recipeBudget = Number(budgetInput.value);
+    budgetValue.textContent = `€${budgetInput.value}`;
+  };
+  budgetInput.addEventListener("input", updateBudget);
+  budgetInput.addEventListener("change", updateBudget);
+  budgetHint.id = "recipe-budget-hint";
+  budgetHint.className = "recipe-form-hint";
+  budgetHint.textContent = "€0 means no additional shopping.";
+  budgetField.append(budgetLabel, budgetValue, budgetInput, budgetHint);
+
+  servingsField.className = "recipe-form-field";
+  servingsLabel.htmlFor = "recipe-servings";
+  servingsLabel.textContent = "Number of Servings";
+  servingsSelect.id = "recipe-servings";
+  servingsSelect.name = "servings";
+  servingsSelect.setAttribute("aria-label", "Number of servings");
+  servingsSelect.append(...servingsOptions);
+  servingsSelect.value = String(recipePresetServings);
+  customServingsToggleLabel.className = "recipe-custom-toggle";
+  customServingsToggle.id = "recipe-custom-servings-toggle";
+  customServingsToggle.name = "customServingsEnabled";
+  customServingsToggle.type = "checkbox";
+  customServingsToggle.checked = recipeCustomServingsEnabled;
+  customServingsToggleLabel.htmlFor = customServingsToggle.id;
+  customServingsToggleLabel.append(
+    customServingsToggle,
+    document.createTextNode("Custom number of servings"),
+  );
+  customServingsPanel.className = "recipe-custom-servings-panel";
+  customServingsPanel.classList.toggle("is-open", recipeCustomServingsEnabled);
+  customServingsPanel.setAttribute(
+    "aria-hidden",
+    String(!recipeCustomServingsEnabled),
+  );
+  customServingsPanel.inert = !recipeCustomServingsEnabled;
+  customServingsLabel.htmlFor = "recipe-custom-servings";
+  customServingsLabel.textContent = "Custom servings";
+  customServingsInput.id = "recipe-custom-servings";
+  customServingsInput.name = "customServings";
+  customServingsInput.type = "number";
+  customServingsInput.min = "1";
+  customServingsInput.step = "1";
+  customServingsInput.required = recipeCustomServingsEnabled;
+  customServingsInput.disabled = !recipeCustomServingsEnabled;
+  customServingsInput.inputMode = "numeric";
+  customServingsInput.value = String(recipeServings);
+  customServingsInput.setAttribute("aria-describedby", "recipe-custom-servings-error");
+  customServingsError.id = "recipe-custom-servings-error";
+  customServingsError.className = "recipe-servings-error";
+  customServingsError.setAttribute("aria-live", "polite");
+  customServingsPanel.append(
+    customServingsLabel,
+    customServingsInput,
+    customServingsError,
+  );
+  servingsSelect.addEventListener("change", () => {
+    const selectedServings = Number(servingsSelect.value);
+    if (Number.isInteger(selectedServings) && selectedServings >= 1) {
+      recipePresetServings = selectedServings;
+      recipeServings = selectedServings;
+      recipeCustomServingsEnabled = false;
+      customServingsToggle.checked = false;
+      customServingsInput.value = String(selectedServings);
+      customServingsInput.required = false;
+      customServingsInput.disabled = true;
+      customServingsPanel.classList.remove("is-open");
+      customServingsPanel.setAttribute("aria-hidden", "true");
+      customServingsPanel.inert = true;
+      customServingsError.textContent = "";
+    }
+  });
+  customServingsToggle.addEventListener("change", () => {
+    recipeCustomServingsEnabled = customServingsToggle.checked;
+    customServingsInput.disabled = !recipeCustomServingsEnabled;
+    customServingsInput.required = recipeCustomServingsEnabled;
+    customServingsPanel.classList.toggle(
+      "is-open",
+      recipeCustomServingsEnabled,
+    );
+    customServingsPanel.setAttribute(
+      "aria-hidden",
+      String(!recipeCustomServingsEnabled),
+    );
+    customServingsPanel.inert = !recipeCustomServingsEnabled;
+    customServingsError.textContent = "";
+    customServingsInput.setCustomValidity("");
+
+    if (recipeCustomServingsEnabled) {
+      customServingsInput.focus();
+    } else {
+      recipeServings = recipePresetServings;
+    }
+  });
+  customServingsInput.addEventListener("input", () => {
+    customServingsInput.setCustomValidity("");
+    customServingsError.textContent = "";
+    const selectedServings = customServingsInput.valueAsNumber;
+    if (
+      Number.isInteger(selectedServings) &&
+      selectedServings >= 1
+    ) {
+      recipeServings = selectedServings;
+    }
+  });
+  customServingsInput.addEventListener("invalid", () => {
+    customServingsError.textContent =
+      "Enter a whole number of servings, starting at 1.";
+    customServingsInput.setCustomValidity(
+      "Enter a whole number of servings, starting at 1.",
+    );
+  });
+  servingsField.append(
+    servingsLabel,
+    servingsSelect,
+    customServingsToggleLabel,
+    customServingsPanel,
+  );
+
+  profileCard.className = "recipe-profile-card";
+  profileHeading.textContent = "Your Profile, your way";
+  profileMessage.textContent =
+    "Dietary preferences, food allergies, preferred cooking time, and cooking skill level will be taken from your existing Profile settings.";
+  profileList.className = "recipe-profile-list";
+
+  for (const [label, value] of profilePreferences) {
+    const item = document.createElement("li");
+    const preferenceName = document.createElement("span");
+    const preferenceValue = document.createElement("span");
+
+    preferenceName.textContent = label;
+    preferenceValue.textContent = value;
+    item.append(preferenceName, preferenceValue);
+    profileList.append(item);
+  }
+
+  profileCard.append(profileHeading, profileMessage, profileList);
+
+  submitButton.className = "recipes-submit";
+  submitButton.type = "submit";
+  submitButton.textContent = "Find My Recipes";
+  status.className = "recipes-status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+
+  form.append(budgetField, servingsField, profileCard, submitButton, status);
+  recipesScreen.append(
+    createProfileBackButton(),
+    heading,
+    subtitle,
+    form,
+  );
+  return recipesScreen;
+}
+
 function createPreferenceScreen({
   title,
   question: questionText,
@@ -749,6 +1006,16 @@ function showScreen(screenName) {
     return;
   }
 
+  if (screenName === "Find Recipes") {
+    screenContent.classList.remove(
+      "is-fridge-screen",
+      "is-profile-screen",
+      "is-dietary-screen",
+    );
+    screenContent.replaceChildren(createRecipesScreen());
+    return;
+  }
+
   screenContent.classList.remove(
     "is-fridge-screen",
     "is-profile-screen",
@@ -908,6 +1175,50 @@ screenContent.addEventListener("click", (event) => {
 });
 
 screenContent.addEventListener("submit", (event) => {
+  const recipeForm = event.target.closest('[data-form="recipe-personalization"]');
+
+  if (recipeForm) {
+    event.preventDefault();
+    const budgetInput = recipeForm.querySelector("#recipe-budget");
+    const customServingsInput = recipeForm.querySelector(
+      "#recipe-custom-servings",
+    );
+    const status = recipeForm.querySelector(".recipes-status");
+
+    if (!recipeForm.reportValidity()) {
+      return;
+    }
+
+    const selectedBudget = Number(budgetInput.value);
+    const selectedServings = recipeCustomServingsEnabled
+      ? customServingsInput.valueAsNumber
+      : Number(recipeForm.querySelector("#recipe-servings").value);
+    if (
+      !Number.isInteger(selectedBudget) ||
+      selectedBudget < 0 ||
+      selectedBudget > 20 ||
+      !Number.isInteger(selectedServings) ||
+      selectedServings < 1
+    ) {
+      if (recipeCustomServingsEnabled) {
+        const errorMessage = "Enter a whole number of servings, starting at 1.";
+        customServingsError.textContent = errorMessage;
+        customServingsInput.setCustomValidity(errorMessage);
+        customServingsInput.reportValidity();
+      }
+      return;
+    }
+
+    recipeBudget = selectedBudget;
+    recipeServings = selectedServings;
+    status.textContent = "Recipe recommendations coming next!";
+    clearTimeout(recipeStatusTimeout);
+    recipeStatusTimeout = setTimeout(() => {
+      status.textContent = "";
+    }, 3500);
+    return;
+  }
+
   const preferenceForm = event.target.closest(
     '[data-form="edit-profile"], [data-form="dietary-preferences"], [data-form="cooking-time"], [data-form="food-allergies"], [data-form="cooking-skill"]',
   );

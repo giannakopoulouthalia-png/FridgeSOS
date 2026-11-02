@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="What's In Your Fridge? — a simple place to start."
+      content="FridgeSOS — Save food. Save money. Survive student life."
     />
-    <title>What's In Your Fridge?</title>
+    <title>FridgeSOS</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -23,7 +23,10 @@
           <rect x="5.5" y="2.5" width="13" height="19" rx="2" />
           <path d="M5.5 11h13M9 6.5v2M9 14.5v3" />
         </svg>
-        <span>What's In Your Fridge?</span>
+        <span class="brand-copy">
+          <span class="brand-name">FridgeSOS</span>
+          <span class="brand-tagline">Save food. Save money. Survive student life.</span>
+        </span>
       </h1>
       <button
         class="menu-toggle"
@@ -86,6 +89,28 @@
         <h2 id="welcome-heading">Hey there! 👋</h2>
         <p>Let's make something delicious with what you already have.</p>
       </section>
+      <section class="fridge-emergency" aria-labelledby="fridge-emergency-heading">
+        <div class="fridge-emergency-copy">
+          <h2 id="fridge-emergency-heading">🚨 Fridge Emergency!</h2>
+          <p
+            class="fridge-emergency-count"
+            id="urgent-ingredient-count"
+            aria-live="polite"
+          >
+            0 ingredients expiring in the next 3 days
+          </p>
+          <p class="fridge-emergency-message" id="fridge-emergency-message">
+            Let's turn your soon-to-expire ingredients into something delicious.
+          </p>
+        </div>
+        <button
+          class="fridge-emergency-button"
+          type="button"
+          data-screen="Find Recipes"
+        >
+          Rescue My Food
+        </button>
+      </section>
       <section class="fridge-preview" aria-labelledby="fridge-preview-title">
         <div class="fridge-preview-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
@@ -137,7 +162,7 @@
           id="food-name"
           name="name"
           type="text"
-          placeholder="e.g. Milk, Tomatoes, Chicken"
+          placeholder="e.g. Milk, Tomatoes, Chicken"P
           required
         />
 

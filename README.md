@@ -1,5 +1,5 @@
 
-# BeforeItGoes
+# FridgeSOS
 
 A mobile application that recommends recipes based on ingredients already available in the user's fridge.
 
