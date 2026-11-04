@@ -3,6 +3,8 @@ const navigation = document.querySelector("#site-navigation");
 const navigationOverlay = document.querySelector(".navigation-overlay");
 const navigationClose = document.querySelector(".navigation-close");
 const screenContent = document.querySelector("#screen-content");
+const phoneScreen = document.querySelector(".phone-screen");
+const splashScreen = document.querySelector("#splash-screen");
 const siteHeader = document.querySelector(".site-header");
 const addFoodDialog = document.querySelector("#add-food-dialog");
 const addFoodForm = document.querySelector("#add-food-form");
@@ -40,80 +42,208 @@ let recipeServings = 2;
 let recipePresetServings = 2;
 let recipeCustomServingsEnabled = false;
 let recipeStatusTimeout;
+const savedRecipes = new Set();
 let foodAllergies = [];
 let customFoodAllergies = [];
 let draftCustomFoodAllergies = [];
+const dialogInvokerElements = new WeakMap();
+const dialogInertStates = new WeakMap();
+const splashInertStates = Array.from(phoneScreen.children)
+  .filter((element) => element !== splashScreen)
+  .map((element) => [element, element.inert]);
+
+for (const [element] of splashInertStates) {
+  element.inert = true;
+}
+
+function openPhoneDialog(dialog, initialFocus) {
+  if (dialog.open) {
+    return;
+  }
+
+  dialogInvokerElements.set(dialog, document.activeElement);
+  dialogInertStates.set(
+    dialog,
+    Array.from(phoneScreen.children)
+      .filter((element) => element !== dialog)
+      .map((element) => [element, element.inert]),
+  );
+  for (const [element] of dialogInertStates.get(dialog)) {
+    element.inert = true;
+  }
+
+  if (window.matchMedia("(min-width: 641px)").matches) {
+    dialog.show();
+  } else {
+    dialog.showModal();
+  }
+  initialFocus.focus();
+}
+
+function restorePhoneDialog(dialog) {
+  const inertStates = dialogInertStates.get(dialog);
+  if (!inertStates) {
+    return;
+  }
+
+  for (const [element, wasInert] of inertStates) {
+    element.inert = wasInert;
+  }
+  dialogInertStates.delete(dialog);
+
+  const invoker = dialogInvokerElements.get(dialog);
+  dialogInvokerElements.delete(dialog);
+  if (invoker instanceof HTMLElement && invoker.isConnected && !invoker.inert) {
+    invoker.focus();
+  }
+}
+
+function closePhoneDialog(dialog) {
+  if (!dialog.open) {
+    return;
+  }
+
+  dialog.close();
+  restorePhoneDialog(dialog);
+  if (dialog === addFoodDialog) {
+    resetAddFoodDialog();
+  } else if (dialog === deleteConfirmationDialog) {
+    deletingIngredientId = null;
+  }
+}
+
+function configurePhoneDialog(dialog) {
+  dialog.addEventListener("close", () => {
+    if (!dialog.open) {
+      restorePhoneDialog(dialog);
+    }
+  });
+
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closePhoneDialog(dialog);
+  });
+
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) {
+      closePhoneDialog(dialog);
+    }
+  });
+
+  dialog.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePhoneDialog(dialog);
+      return;
+    }
+
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusableElements = Array.from(
+      dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((element) => element.getClientRects().length > 0);
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (!firstElement || !lastElement) {
+      event.preventDefault();
+    } else if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  });
+}
+
+configurePhoneDialog(addFoodDialog);
+configurePhoneDialog(deleteConfirmationDialog);
 
 const recipesDatabase = [
   {
     id: "rec-1",
-    name: "Κρεμώδης Ομελέτα Φούρνου με Σπανάκι και Ντομάτα",
+    name: "Creamy Baked Spinach and Tomato Omelette",
     ingredients: ["Spinach", "Tomatoes", "Milk", "Eggs"],
+    displayIngredients: ["2 eggs", "100g spinach", "1 tomato", "50ml milk"],
     extraCost: 2,
-    steps: "1. Σε ένα καθαρό μπολ, σπάστε τα αυγά και προσθέστε λίγο γάλα, χτυπώντας τα καλά με ένα πιρούνι μέχρι να αφρατέψουν.\n2. Πλύνετε σχολαστικά τα φύλλα από το σπανάκι και ψιλοκόψτε τις φρέσκες ντομάτες.\n3. Ζεσταίνετε ελαφρώς ένα αντικολλητικό τηγάνι με ελάχιστο λάδι.\n4. Σοτάρετε πρώτα το σπανάκι μέχρι να μαλακώσει και στη συνέχεια προσθέστε τις ντομάτες.\n5. Ρίξτε το μείγμα των αυγών πάνω από τα λαχανικά, χαμηλώστε τη φωτιά και αφήστε τα να ψηθούν ομοιόμορφα μέχρι να σταθεροποιηθεί η ομελέτα."
+    steps: "1. Crack the eggs into a clean bowl, add a little milk, and whisk with a fork until fluffy.\n2. Wash the spinach thoroughly and finely chop the fresh tomatoes.\n3. Warm a nonstick pan over low heat with a little oil.\n4. Sauté the spinach until wilted, then add the tomatoes.\n5. Pour the egg mixture over the vegetables, lower the heat, and cook evenly until the omelette is set."
   },
   {
     id: "rec-2",
-    name: "Λαχταριστή Μακαρονάδα με Σάλτσα Ντομάτας και Γάλα",
+    name: "Tomato and Creamy Milk Pasta",
     ingredients: ["Tomatoes", "Milk", "Grains"],
+    displayIngredients: ["200g pasta", "2 tomatoes", "100ml milk"],
     extraCost: 4,
-    steps: "1. Γεμίστε μια κατσαρόλα με νερό, αλατίστε το και αφήστε το να πάρει βράση.\n2. Ρίξτε τα ζυμαρικά σας και ανακαταδέστε τα περιοδικά μέχρι να γίνουν al dente.\n3. Παράλληλα, σε ένα ξεχωριστό τηγάνι, ετοιμάστε τη βάση πολτοποιώντας τις ντομάτες.\n4. Προσθέστε σταδιακά το γάλα στη σάλτσα ντομάτας ανακατεύοντας συνεχώς για να δημιουργήσετε μια πλούσια, κρεμώδη υφή.\n5. Στραγγίστε τα μακαρόνια και αναμείξτε τα απευθείας μέσα στη ζεστή σάλτσα."
+    steps: "1. Fill a pot with water, season with salt, and bring it to a boil.\n2. Add the pasta and stir occasionally until al dente.\n3. Meanwhile, blend the tomatoes in a separate pan to make the sauce base.\n4. Gradually stir the milk into the tomato sauce until it becomes rich and creamy.\n5. Drain the pasta and toss it directly into the warm sauce."
   },
   {
     id: "rec-3",
-    name: "Ζεστό Τοστ 'Special' με Τυρί και Ντομάτα",
+    name: "Toasty Cheese and Tomato Sandwich",
     ingredients: ["Bread", "Cheese", "Tomatoes"],
+    displayIngredients: ["2 slices of bread", "50g cheese", "1 tomato"],
     extraCost: 1,
-    steps: "1. Πάρτε τις φέτες ψωμιού και τοποθετήστε πάνω τους γενναιόδωρες φέτες από το τυρί σας.\n2. Κόψτε τις ντομάτες σε λεπτές ροδέλες και στρώστε τις ομοιόμορφα πάνω από το τυρί.\n3. Κλείστε το τοστ με τη δεύτερη φέτα ψωμιού.\n4. Τοποθετήστε το στην προθερμασμένη τοστιέρα και πιέστε ελαφρά.\n5. Ψήστε μέχρι να λιώσει τελείως το τυρί και να γίνει τραγανή η κρούστα του ψωμιού."
+    steps: "1. Lay generous slices of cheese on one slice of bread.\n2. Cut the tomato into thin rounds and layer them evenly over the cheese.\n3. Close the sandwich with the second slice of bread.\n4. Place it in a preheated sandwich press and press gently.\n5. Toast until the cheese has melted and the bread is crisp."
   },
   {
     id: "rec-4",
-    name: "Παραδοσιακά Τηγανητά Αυγά με Φρέσκο Ψωμί",
+    name: "Classic Fried Eggs with Fresh Bread",
     ingredients: ["Eggs", "Bread"],
+    displayIngredients: ["2 eggs", "2 slices of fresh bread"],
     extraCost: 1,
-    steps: "1. Ζεσταίνετε μια μικρή ποσότητα λαδιού σε ένα τηγάνι σε μέτρια φωτιά.\n2. Σπάστε τα αυγά προσεκτικά για να μην σπάσουν οι κρόκοι.\n3. Αλατοπιπερώστε κατά βούληση και αφήστε τα να τηγανιστούν μέχρι να ασπρίσουν τα ασπράδια και να μείνουν μελωμένοι οι κρόκοι.\n4. Σερβίρετε αμέσως στο πιάτο συνοδεύοντάς τα με μπόλικο φρέσκο ψωμί για 'βούτηγμα'."
+    steps: "1. Heat a little oil in a pan over medium heat.\n2. Carefully crack in the eggs, keeping the yolks intact.\n3. Season with salt and pepper to taste, then fry until the whites are set and the yolks are still runny.\n4. Serve immediately with plenty of fresh bread for dipping."
   },
   {
     id: "rec-5",
-    name: "Ντελικάτη Σαλάτα με Φρέσκο Σπανάκι και Κύβους Τυριού",
+    name: "Fresh Spinach Salad with Cheese Cubes",
     ingredients: ["Spinach", "Cheese"],
+    displayIngredients: ["100g fresh spinach", "50g cheese"],
     extraCost: 3,
-    steps: "1. Καθαρίστε και στεγνώστε καλά τα φύλλα από το σπανάκι, τοποθετώντας τα σε ένα ευρύχωρo σαλατιέρα.\n2. Κόψτε το τυρί σε μικρούς, ομοιόμορφους κύβους.\n3. Προσθέστε τους κύβους τυριού πάνω από το πράσινο σπανάκι.\n4. Ανακατέψτε απαλά ώστε να κατανεμηθούν τα υλικά ισiόρροπα σε όλη την επιφάνεια της σαλάτας."
+    steps: "1. Wash and thoroughly dry the spinach leaves, then place them in a large salad bowl.\n2. Cut the cheese into small, even cubes.\n3. Scatter the cheese cubes over the spinach.\n4. Toss gently so the ingredients are evenly distributed."
   },
   {
     id: "rec-6",
-    name: "Βελούδινη Σπιτική Ντοματόσουπα",
+    name: "Velvety Homemade Tomato Soup",
     ingredients: ["Tomatoes", "Milk"],
+    displayIngredients: ["3 tomatoes", "100ml milk"],
     extraCost: 2,
-    steps: "1. Πολτοποιήστε τις ντομάτες μέχρι να γίνουν λείος χυμός και ρίξτε τες σε ένα κατσαρολάκι.\n2. Ανάψτε τη φωτιά σε μέτρια ένταση και αφήστε τη ντομάτα να πάρει μια ελαφριά βράση.\n3. Χαμηλώστε τη θερμοκρασία και προσθέστε το γάλα ανακατεύοντας διαρκώς.\n4. Αφήστε το μείγμα να ζεσταθεί καλά χωρίς να κολλήσει στον πάτο της κατσαρόλας."
+    steps: "1. Blend the tomatoes until smooth and pour them into a small saucepan.\n2. Set the pan over medium heat and bring the tomato mixture to a gentle simmer.\n3. Lower the heat and add the milk, stirring continuously.\n4. Warm the soup through, making sure it does not stick to the bottom of the pan."
   },
   {
     id: "rec-7",
-    name: "Κλασικά Ζυμαρικά με Αρωματική Σάλτσα Ντομάτας",
+    name: "Classic Pasta with Fragrant Tomato Sauce",
     ingredients: ["Tomatoes", "Grains"],
+    displayIngredients: ["200g pasta", "3 tomatoes"],
     extraCost: 2,
-    steps: "1. Βράστε τα ζυμαρικά σε άφθονο αλατισμένο νερό μέχρι να είναι έτοιμα.\n2. Σε ένα ξεχωριστό σκεύος, πολτοποιήστε τις ντομάτες και αφήστε τες να σιγοβράσουν ώστε να εξατμιστούν τα πολλά υγρά.\n3. Ενώστε τα στραγγισμένα ζυμαρικά με τη σπιτική σάλτσα ντομάτας.\n4. Ανακατέψτε καλά ώστε να απορροφήσουν τα αρώματα πριν το σερβίρισμα."
+    steps: "1. Cook the pasta in plenty of salted boiling water until tender.\n2. In a separate pan, blend the tomatoes and simmer until excess liquid evaporates.\n3. Combine the drained pasta with the homemade tomato sauce.\n4. Toss well so the pasta absorbs the flavors, then serve."
   },
   {
     id: "rec-8",
-    name: "Κρεμώδη Scrambled Eggs με Γάλα",
+    name: "Creamy Scrambled Eggs with Milk",
     ingredients: ["Eggs", "Milk"],
+    displayIngredients: ["2 eggs", "30ml milk"],
     extraCost: 0,
-    steps: "1. Σπάστε τα αυγά σε ένα μπολ, προσθέστε μια κουταλιά γάλα και χτυπήστε τα καλά.\n2. Ζεσταίνετε ένα τηγάνι σε χαμηλή φωτιά με ελάχιστο βούτυρο ή λάδι.\n3. Ρίξτε το μείγμα των αυγών και αρχίστε να ανακατεύετε ασταμάτητα με μια σπάτουλα.\n4. Αποσύρйте από τη φωτιά ακριβώς πριν στεγνώσουν εντελώς, ώστε να παραμείνουν ζουμερά και κρεμώδη."
+    steps: "1. Crack the eggs into a bowl, add a tablespoon of milk, and whisk well.\n2. Warm a pan over low heat with a little butter or oil.\n3. Pour in the eggs and stir continuously with a spatula.\n4. Remove from the heat just before they are completely set so they stay soft and creamy."
   },
   {
     id: "rec-9",
-    name: "Ζεστές Αυγοφέτες (French Toast) Φούρνου/Τηγανιού",
+    name: "Golden French Toast",
     ingredients: ["Eggs", "Milk", "Bread"],
+    displayIngredients: ["2 eggs", "100ml milk", "2 slices of bread"],
     extraCost: 1,
-    steps: "1. Σε ένα βαθύ πιάτο, χτυπήστε τα αυγά μαζί με λίγο γάλα μέχρι να ομογενοποιηθούν.\n2. Βουτήξτε τις φέτες ψωμιού στο μείγμα και αφήστε τες να το απορροφήσουν ελαφρώς και από τις δύο πλευρές.\n3. Ζεσταίνετε ένα τηγάνι και τοποθετήστε τις μουλιασμένες φέτες.\n4. Τηγανίστε τες μέχρι να αποκτήσουν ένα ωραίο, χρυσαφένιο χρώμα και στις δύο πλευρές."
+    steps: "1. In a shallow dish, whisk the eggs with a little milk until combined.\n2. Dip the bread slices in the mixture and let them soak it up lightly on both sides.\n3. Heat a pan and add the soaked slices.\n4. Fry until golden brown on both sides."
   },
   {
     id: "rec-10",
-    name: "Αρωματικό Ρύζι με Σοταρισμένο Σπανάκι και Ντομάτα",
+    name: "Fragrant Rice with Sautéed Spinach and Tomato",
     ingredients: ["Grains", "Spinach", "Tomatoes"],
+    displayIngredients: ["150g rice", "100g spinach", "1 tomato"],
     extraCost: 3,
-    steps: "1. Βράστε το ρύζι σε κατσαρόλα με νερό και λίγο αλάτι μέχρι να μαλακώσει, έπειτα στραγγίστε το.\n2. Σε ένα ευρύχωρο τηγάνι, σοτάρετε το σπανάκι μέχρι να μειωθεί σε όγκο.\n3. Προσθέστε τις ψιλοκομμένες ντομάτες στο ίδιο τηγάνι και αφήστε τα υλικά να δέσουν.\n4. Ενσωματώστε το έτοιμο ρύζι μέσα στο τηγάνι με τα λαχανικά και ανακατέψτε απαλά."
+    steps: "1. Cook the rice in a pot of lightly salted water until tender, then drain.\n2. In a large pan, sauté the spinach until wilted.\n3. Add the chopped tomatoes to the pan and cook until the flavors come together.\n4. Fold the cooked rice into the vegetables and stir gently."
   }
 ];
 let profileDetails = {
@@ -361,8 +491,7 @@ function openAddFoodDialog(ingredient = null) {
     expirationDateInput.value = formatLocalDate(sortedIngredient.expirationDate);
   }
 
-  addFoodDialog.showModal();
-  foodCategoryInput.focus();
+  openPhoneDialog(addFoodDialog, foodCategoryInput);
 }
 
 function resetAddFoodDialog() {
@@ -917,6 +1046,163 @@ function createRecipesScreen() {
   return recipesScreen;
 }
 
+function updateRecipeSaveButton(button, recipe) {
+  const isSaved = savedRecipes.has(recipe.id);
+  button.classList.toggle("is-saved", isSaved);
+  button.setAttribute("aria-pressed", String(isSaved));
+  button.setAttribute(
+    "aria-label",
+    isSaved
+      ? `Remove ${recipe.name} from saved recipes`
+      : `Save ${recipe.name}`,
+  );
+  button.textContent = isSaved ? "♥ Saved" : "♡ Save";
+}
+
+function createRecipeSaveButton(recipe, onChange = () => {}) {
+  const button = document.createElement("button");
+  button.className = "recipe-save-button";
+  button.type = "button";
+  updateRecipeSaveButton(button, recipe);
+  button.addEventListener("click", () => {
+    if (savedRecipes.has(recipe.id)) {
+      savedRecipes.delete(recipe.id);
+    } else {
+      savedRecipes.add(recipe.id);
+    }
+
+    updateRecipeSaveButton(button, recipe);
+    onChange(savedRecipes.has(recipe.id));
+  });
+  return button;
+}
+
+function createRecipeCard(recipe, openRecipe, onSaveChange = () => {}) {
+  const card = document.createElement("article");
+  const cardHeader = document.createElement("div");
+  const saveButton = createRecipeSaveButton(recipe, onSaveChange);
+  const openButton = document.createElement("button");
+  const title = document.createElement("h3");
+  const costBadge = document.createElement("span");
+  const ingredients = document.createElement("p");
+
+  card.className = "recipe-card";
+  cardHeader.className = "recipe-card-header";
+  openButton.className = "recipe-card-open";
+  openButton.type = "button";
+  openButton.setAttribute("aria-label", `View ${recipe.name}`);
+  title.className = "recipe-card-title";
+  title.textContent = recipe.name;
+  costBadge.className = "recipe-cost-badge";
+  costBadge.textContent = recipe.extraCost === 0
+    ? "No extra cost"
+    : `Additional cost: €${recipe.extraCost}`;
+  ingredients.className = "recipe-card-ingredients";
+  ingredients.textContent = `Ingredients: ${recipe.displayIngredients.join(", ")}`;
+
+  cardHeader.append(title, saveButton);
+  openButton.append(costBadge, ingredients);
+  openButton.addEventListener("click", () => openRecipe(recipe));
+  card.append(cardHeader, openButton);
+  return card;
+}
+
+function createRecipeDetailsScreen(recipe, onBack) {
+  const detailScreen = document.createElement("section");
+  const detailBack = createProfileBackButton();
+  const detailHeading = document.createElement("h2");
+  const detailCost = document.createElement("p");
+  const saveButton = createRecipeSaveButton(recipe);
+  const ingredientsHeading = document.createElement("h3");
+  const ingredientsList = document.createElement("ul");
+  const stepsHeading = document.createElement("h3");
+  const stepsList = document.createElement("ol");
+  const bonAppetit = document.createElement("p");
+
+  detailScreen.className = "recipe-detail-screen";
+  detailBack.removeAttribute("data-screen");
+  detailBack.setAttribute("aria-label", "Back to recipes");
+  detailBack.addEventListener("click", onBack);
+  detailHeading.className = "recipe-detail-title";
+  detailHeading.textContent = recipe.name;
+  detailCost.className = "recipe-detail-cost";
+  detailCost.textContent = recipe.extraCost === 0
+    ? "No extra cost"
+    : `Additional cost: €${recipe.extraCost}`;
+  ingredientsHeading.className = "recipe-detail-section-title";
+  ingredientsHeading.textContent = "Ingredients";
+  ingredientsList.className = "recipe-detail-ingredients";
+  recipe.displayIngredients.forEach((ingredient) => {
+    const item = document.createElement("li");
+    item.textContent = ingredient;
+    ingredientsList.append(item);
+  });
+  stepsHeading.className = "recipe-detail-section-title";
+  stepsHeading.textContent = "Cooking Instructions";
+  stepsList.className = "recipe-detail-steps";
+  recipe.steps.split("\n").forEach((step) => {
+    const item = document.createElement("li");
+    item.textContent = step.replace(/^\d+\.\s*/, "");
+    stepsList.append(item);
+  });
+  bonAppetit.className = "recipe-detail-footer";
+  bonAppetit.textContent = "Enjoy!";
+
+  detailScreen.append(
+    detailBack,
+    detailHeading,
+    detailCost,
+    saveButton,
+    ingredientsHeading,
+    ingredientsList,
+    stepsHeading,
+    stepsList,
+    bonAppetit,
+  );
+  return detailScreen;
+}
+
+function createSavedRecipesScreen() {
+  const savedScreen = document.createElement("section");
+  const heading = document.createElement("h2");
+  const savedRecipesList = recipesDatabase.filter((recipe) =>
+    savedRecipes.has(recipe.id),
+  );
+
+  savedScreen.className = "recipes-screen saved-recipes-screen";
+  heading.textContent = "Saved Recipes";
+  savedScreen.append(createProfileBackButton(), heading);
+
+  if (savedRecipesList.length === 0) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "saved-recipes-empty";
+    emptyState.textContent =
+      "No saved recipes yet. Tap the heart on a recipe to keep it here.";
+    savedScreen.append(emptyState);
+    return savedScreen;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "recipe-card-grid";
+  savedRecipesList.forEach((recipe) => {
+    grid.append(
+      createRecipeCard(
+        recipe,
+        () => {
+          screenContent.replaceChildren(
+            createRecipeDetailsScreen(recipe, () => {
+              screenContent.replaceChildren(createSavedRecipesScreen());
+            }),
+          );
+        },
+        () => screenContent.replaceChildren(createSavedRecipesScreen()),
+      ),
+    );
+  });
+  savedScreen.append(grid);
+  return savedScreen;
+}
+
 function createPreferenceScreen({
   title,
   question: questionText,
@@ -1089,6 +1375,16 @@ function showScreen(screenName) {
     return;
   }
 
+  if (screenName === "Saved Recipes") {
+    screenContent.classList.remove(
+      "is-fridge-screen",
+      "is-profile-screen",
+      "is-dietary-screen",
+    );
+    screenContent.replaceChildren(createSavedRecipesScreen());
+    return;
+  }
+
   screenContent.classList.remove(
     "is-fridge-screen",
     "is-profile-screen",
@@ -1241,8 +1537,7 @@ screenContent.addEventListener("click", (event) => {
     } else {
       deletingIngredientId = ingredient.id;
       deleteConfirmationMessage.textContent = `Are you sure you want to delete ${ingredient.name}?`;
-      deleteConfirmationDialog.showModal();
-      cancelDeleteButton.focus();
+      openPhoneDialog(deleteConfirmationDialog, cancelDeleteButton);
     }
   }
 });
@@ -1284,115 +1579,41 @@ screenContent.addEventListener("submit", (event) => {
 
     recipeBudget = selectedBudget;
     recipeServings = selectedServings;
-    // 1. Φιλτράρισμα συνταγών βάσει budget
-    const matchedRecipes = recipesDatabase.filter(recipe => recipe.extraCost <= recipeBudget);
-
-    // 2. Δημιουργία της οθόνης αποτελεσμάτων
+    const matchedRecipes = recipesDatabase.filter(
+      (recipe) => recipe.extraCost <= recipeBudget,
+    );
     const resultsScreen = document.createElement("section");
     resultsScreen.className = "recipes-screen";
-
-    // Προσθήκη κουμπιού Back επάνω αριστερά
-    const backButton = createProfileBackButton("Find Recipes");
-    resultsScreen.appendChild(backButton);
-
+    resultsScreen.append(createProfileBackButton("Find Recipes"));
     const heading = document.createElement("h2");
-    heading.textContent = matchedRecipes.length > 0 ? "Προτεινόμενες Συνταγές" : "Δεν βρέθηκαν συνταγές";
-
+    heading.textContent = matchedRecipes.length > 0
+      ? "Suggested Recipes"
+      : "No Recipes Found";
     const subtitle = document.createElement("p");
     subtitle.className = "recipes-subtitle";
-    subtitle.textContent = matchedRecipes.length > 0 
-      ? `Με βάση το μπατζετ σου (€${recipeBudget}), μπορείς να φτιάξεις τις παρακάτω συνταγές:`
-      : `Δυστυχώς δεν υπάρχει συνταγή εντός του μπατζετ των €${recipeBudget}. Δοκίμασε να αυξήσεις το μπατζετ!`;
-
+    subtitle.textContent = matchedRecipes.length > 0
+      ? `Based on your €${recipeBudget} budget, you can make these recipes:`
+      : `No recipes fit your €${recipeBudget} budget. Try increasing your budget.`;
     resultsScreen.append(heading, subtitle);
 
-    // 3. Δημιουργία πλέγματος (grid) για τις κάρτες
     const grid = document.createElement("div");
-    grid.className = "fridge-ingredient-grid";
-    grid.style.marginTop = "1.5rem";
-
-    matchedRecipes.forEach(recipe => {
-      const card = document.createElement("article");
-      card.className = "fridge-ingredient-card";
-      card.style.minHeight = "auto";
-      card.style.padding = "1.25rem";
-      card.style.cursor = "pointer"; // Κάνει την κάρτα να φαίνεται πατήσιμη
-
-      const title = document.createElement("h3");
-      title.className = "fridge-ingredient-name";
-      title.textContent = recipe.name;
-
-      const costBadge = document.createElement("span");
-      costBadge.className = "fridge-ingredient-expiration";
-      costBadge.textContent = recipe.extraCost === 0 ? "Δωρεάν (χωρίς επιπλέον υλικά)" : `Επιπλέον κόστος: €${recipe.extraCost}`;
-
-      const ingredientsList = document.createElement("p");
-      ingredientsList.style.fontSize = "0.875rem";
-      ingredientsList.style.marginTop = "0.75rem";
-      ingredientsList.style.color = "rgb(35 71 53 / 80%)";
-      ingredientsList.textContent = `Υλικά: ${recipe.ingredients.join(", ")}`;
-
-      card.append(title, costBadge, ingredientsList);
-
-      // Όταν ο χρήστης κάνει κλικ σε μια συνταγή, εμφανίζονται τα βήματα εκτέλεσης
-      
-        card.addEventListener("click", () => {
-        const detailScreen = document.createElement("section");
-        detailScreen.className = "recipes-screen";
-        
-        // Στυλ για το όμορφο πλαίσιο, τα χρώματα και τη στοίχιση
-        detailScreen.style.backgroundColor = "#f5eae3"; // Απαλό μπεζ-ροζ φόντο
-        detailScreen.style.padding = "2rem";
-        detailScreen.style.borderRadius = "16px";
-        detailScreen.style.maxWidth = "600px";
-        detailScreen.style.margin = "2rem auto";
-        detailScreen.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.05)";
-
-        const detailBack = createProfileBackButton();
-        detailBack.addEventListener("click", () => {
-          screenContent.replaceChildren(resultsScreen);
-        });
-
-        const detailHeading = document.createElement("h2");
-        detailHeading.textContent = recipe.name;
-        detailHeading.style.color = "#1b3b2b"; // Σκούρο πράσινο
-
-        const detailCost = document.createElement("p");
-        detailCost.className = "recipes-subtitle";
-        detailCost.textContent = recipe.extraCost === 0 ? "Επιπλέον κόστος: Δωρεάν" : `Επιπλέον κόστος: €${recipe.extraCost}`;
-        detailCost.style.color = "#234735";
-
-        const stepsHeading = document.createElement("h3");
-        stepsHeading.textContent = "Εκτέλεση Συνταγής";
-        stepsHeading.style.marginTop = "1.5rem";
-        stepsHeading.style.color = "#1b3b2b"; // Σκούρο πράσινο
-
-        const stepsText = document.createElement("p");
-        stepsText.style.whiteSpace = "pre-line"; 
-        stepsText.style.marginTop = "0.75rem";
-        stepsText.style.lineHeight = "1.6";
-        stepsText.style.color = "#234735"; // Σκούρο πράσινο γράμματα
-        stepsText.textContent = recipe.steps || "Δεν υπάρχουν διαθέσιμες οδηγίες εκτέλεσης.";
-
-        // Δημιουργία στοιχείου για το "Καλή όρεξη!" στο τέλος
-        const bonAppetit = document.createElement("p");
-        bonAppetit.textContent = "Καλή όρεξη! 😋";
-        bonAppetit.style.marginTop = "2rem";
-        bonAppetit.style.fontWeight = "bold";
-        bonAppetit.style.fontSize = "1.1rem";
-        bonAppetit.style.textAlign = "center";
-        bonAppetit.style.color = "#1b3b2b"; // Σκούρο πράσινο
-
-        detailScreen.append(detailBack, detailHeading, detailCost, stepsHeading, stepsText, bonAppetit);
-        screenContent.replaceChildren(detailScreen);
-      });
-
-      grid.appendChild(card);
+    grid.className = "recipe-card-grid";
+    matchedRecipes.forEach((recipe) => {
+      grid.append(
+        createRecipeCard(recipe, () => {
+          screenContent.replaceChildren(
+            createRecipeDetailsScreen(recipe, () => {
+              screenContent.replaceChildren(resultsScreen);
+            }),
+          );
+        }),
+      );
     });
 
-    resultsScreen.appendChild(grid);
+    if (matchedRecipes.length > 0) {
+      resultsScreen.append(grid);
+    }
 
-    // 4. Αντικατάσταση οθόνης
     screenContent.replaceChildren(resultsScreen);
     return;
   }
@@ -1490,13 +1711,18 @@ screenContent.addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#cancel-add-food").addEventListener("click", () => {
-  addFoodDialog.close();
+  closePhoneDialog(addFoodDialog);
 });
 
-addFoodDialog.addEventListener("close", resetAddFoodDialog);
+addFoodDialog.addEventListener("close", () => {
+  if (!addFoodDialog.open) {
+    restorePhoneDialog(addFoodDialog);
+    resetAddFoodDialog();
+  }
+});
 
 cancelDeleteButton.addEventListener("click", () => {
-  deleteConfirmationDialog.close();
+  closePhoneDialog(deleteConfirmationDialog);
 });
 
 confirmDeleteButton.addEventListener("click", () => {
@@ -1514,12 +1740,15 @@ confirmDeleteButton.addEventListener("click", () => {
   }
 
   deletingIngredientId = null;
-  deleteConfirmationDialog.close();
+  closePhoneDialog(deleteConfirmationDialog);
   screenContent.querySelector(".add-food-button")?.focus();
 });
 
 deleteConfirmationDialog.addEventListener("close", () => {
-  deletingIngredientId = null;
+  if (!deleteConfirmationDialog.open) {
+    restorePhoneDialog(deleteConfirmationDialog);
+    deletingIngredientId = null;
+  }
 });
 
 foodNameInput.addEventListener("input", () => {
@@ -1555,7 +1784,7 @@ addFoodForm.addEventListener("submit", (event) => {
     const ingredient = ingredients.find((item) => item.id === savedIngredientId);
 
     if (!ingredient) {
-      addFoodDialog.close();
+      closePhoneDialog(addFoodDialog);
       return;
     }
 
@@ -1577,7 +1806,7 @@ addFoodForm.addEventListener("submit", (event) => {
     });
   }
 
-  addFoodDialog.close();
+  closePhoneDialog(addFoodDialog);
   refreshIngredientViews();
   const savedIngredientEditButton = Array.from(
     screenContent.querySelectorAll('[data-ingredient-action="edit"]'),
@@ -1613,3 +1842,23 @@ document.addEventListener("keydown", (event) => {
     }
   }
 });
+
+const reducedMotionPreference = window.matchMedia(
+  "(prefers-reduced-motion: reduce)",
+).matches;
+
+window.setTimeout(() => {
+  splashScreen.classList.add("is-leaving");
+  splashScreen.setAttribute("aria-hidden", "true");
+  splashScreen.inert = true;
+
+  window.setTimeout(
+    () => {
+      splashScreen.hidden = true;
+      for (const [element, wasInert] of splashInertStates) {
+        element.inert = wasInert;
+      }
+    },
+    reducedMotionPreference ? 30 : 340,
+  );
+}, reducedMotionPreference ? 1950 : 1680);

@@ -11,7 +11,32 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header class="site-header">
+    <div class="phone-stage">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <span class="dynamic-island" aria-hidden="true"></span>
+          <div
+            class="splash-screen"
+            id="splash-screen"
+            role="status"
+            aria-label="FridgeSOS loading"
+          >
+            <div class="splash-content">
+              <svg
+                class="splash-logo"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect x="5.5" y="2.5" width="13" height="19" rx="2" />
+                <path d="M5.5 11h13M9 6.5v2M9 14.5v3" />
+              </svg>
+              <h1 class="splash-title">FridgeSOS</h1>
+              <p class="splash-tagline">Save food. Save money. Survive student life.</p>
+            </div>
+          </div>
+          <header class="site-header">
       <h1 class="brand">
         <svg
           class="brand-icon"
@@ -86,8 +111,11 @@
     </aside>
     <main class="screen-content" id="screen-content" aria-live="polite">
       <section class="welcome" aria-labelledby="welcome-heading">
-        <h2 id="welcome-heading">Hey there! 👋</h2>
-        <p>Let's make something delicious with what you already have.</p>
+        <p class="welcome-label">✦ FRIDGESOS DAILY REMINDER</p>
+        <h2 id="welcome-heading">Broke? Hungry? We've got you.</h2>
+        <p class="welcome-subtitle">
+          Turn what's in your fridge into your next favorite meal.
+        </p>
       </section>
       <section class="fridge-emergency" aria-labelledby="fridge-emergency-heading">
         <div class="fridge-emergency-copy">
@@ -142,7 +170,12 @@
         <ul class="ingredient-list" id="ingredient-list"></ul>
       </section>
     </main>
-    <dialog class="add-food-dialog" id="add-food-dialog" aria-labelledby="add-food-title">
+    <dialog
+      class="add-food-dialog"
+      id="add-food-dialog"
+      aria-modal="true"
+      aria-labelledby="add-food-title"
+    >
       <form class="add-food-form" id="add-food-form">
         <h2 id="add-food-title">Add Food</h2>
         <label for="food-category">Food Category</label>
@@ -175,21 +208,25 @@
         </div>
       </form>
     </dialog>
-    <dialog
-      class="delete-confirmation-dialog"
-      id="delete-confirmation-dialog"
-      aria-labelledby="delete-confirmation-title"
-      aria-describedby="delete-confirmation-message"
-    >
-      <div class="delete-confirmation-content">
-        <h2 id="delete-confirmation-title">Delete ingredient?</h2>
-        <p id="delete-confirmation-message"></p>
-        <div class="add-food-actions">
-          <button class="add-food-cancel" type="button" id="cancel-delete">Cancel</button>
-          <button class="delete-confirm-button" type="button" id="confirm-delete">Delete</button>
+          <dialog
+            class="delete-confirmation-dialog"
+            id="delete-confirmation-dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirmation-title"
+            aria-describedby="delete-confirmation-message"
+          >
+            <div class="delete-confirmation-content">
+              <h2 id="delete-confirmation-title">Delete ingredient?</h2>
+              <p id="delete-confirmation-message"></p>
+              <div class="add-food-actions">
+                <button class="add-food-cancel" type="button" id="cancel-delete">Cancel</button>
+                <button class="delete-confirm-button" type="button" id="confirm-delete">Delete</button>
+              </div>
+            </div>
+          </dialog>
         </div>
       </div>
-    </dialog>
+    </div>
     <script src="script.js" defer></script>
   </body>
 </html>
