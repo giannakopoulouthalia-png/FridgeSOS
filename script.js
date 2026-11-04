@@ -43,6 +43,79 @@ let recipeStatusTimeout;
 let foodAllergies = [];
 let customFoodAllergies = [];
 let draftCustomFoodAllergies = [];
+
+const recipesDatabase = [
+  {
+    id: "rec-1",
+    name: "Κρεμώδης Ομελέτα Φούρνου με Σπανάκι και Ντομάτα",
+    ingredients: ["Spinach", "Tomatoes", "Milk", "Eggs"],
+    extraCost: 2,
+    steps: "1. Σε ένα καθαρό μπολ, σπάστε τα αυγά και προσθέστε λίγο γάλα, χτυπώντας τα καλά με ένα πιρούνι μέχρι να αφρατέψουν.\n2. Πλύνετε σχολαστικά τα φύλλα από το σπανάκι και ψιλοκόψτε τις φρέσκες ντομάτες.\n3. Ζεσταίνετε ελαφρώς ένα αντικολλητικό τηγάνι με ελάχιστο λάδι.\n4. Σοτάρετε πρώτα το σπανάκι μέχρι να μαλακώσει και στη συνέχεια προσθέστε τις ντομάτες.\n5. Ρίξτε το μείγμα των αυγών πάνω από τα λαχανικά, χαμηλώστε τη φωτιά και αφήστε τα να ψηθούν ομοιόμορφα μέχρι να σταθεροποιηθεί η ομελέτα."
+  },
+  {
+    id: "rec-2",
+    name: "Λαχταριστή Μακαρονάδα με Σάλτσα Ντομάτας και Γάλα",
+    ingredients: ["Tomatoes", "Milk", "Grains"],
+    extraCost: 4,
+    steps: "1. Γεμίστε μια κατσαρόλα με νερό, αλατίστε το και αφήστε το να πάρει βράση.\n2. Ρίξτε τα ζυμαρικά σας και ανακαταδέστε τα περιοδικά μέχρι να γίνουν al dente.\n3. Παράλληλα, σε ένα ξεχωριστό τηγάνι, ετοιμάστε τη βάση πολτοποιώντας τις ντομάτες.\n4. Προσθέστε σταδιακά το γάλα στη σάλτσα ντομάτας ανακατεύοντας συνεχώς για να δημιουργήσετε μια πλούσια, κρεμώδη υφή.\n5. Στραγγίστε τα μακαρόνια και αναμείξτε τα απευθείας μέσα στη ζεστή σάλτσα."
+  },
+  {
+    id: "rec-3",
+    name: "Ζεστό Τοστ 'Special' με Τυρί και Ντομάτα",
+    ingredients: ["Bread", "Cheese", "Tomatoes"],
+    extraCost: 1,
+    steps: "1. Πάρτε τις φέτες ψωμιού και τοποθετήστε πάνω τους γενναιόδωρες φέτες από το τυρί σας.\n2. Κόψτε τις ντομάτες σε λεπτές ροδέλες και στρώστε τις ομοιόμορφα πάνω από το τυρί.\n3. Κλείστε το τοστ με τη δεύτερη φέτα ψωμιού.\n4. Τοποθετήστε το στην προθερμασμένη τοστιέρα και πιέστε ελαφρά.\n5. Ψήστε μέχρι να λιώσει τελείως το τυρί και να γίνει τραγανή η κρούστα του ψωμιού."
+  },
+  {
+    id: "rec-4",
+    name: "Παραδοσιακά Τηγανητά Αυγά με Φρέσκο Ψωμί",
+    ingredients: ["Eggs", "Bread"],
+    extraCost: 1,
+    steps: "1. Ζεσταίνετε μια μικρή ποσότητα λαδιού σε ένα τηγάνι σε μέτρια φωτιά.\n2. Σπάστε τα αυγά προσεκτικά για να μην σπάσουν οι κρόκοι.\n3. Αλατοπιπερώστε κατά βούληση και αφήστε τα να τηγανιστούν μέχρι να ασπρίσουν τα ασπράδια και να μείνουν μελωμένοι οι κρόκοι.\n4. Σερβίρετε αμέσως στο πιάτο συνοδεύοντάς τα με μπόλικο φρέσκο ψωμί για 'βούτηγμα'."
+  },
+  {
+    id: "rec-5",
+    name: "Ντελικάτη Σαλάτα με Φρέσκο Σπανάκι και Κύβους Τυριού",
+    ingredients: ["Spinach", "Cheese"],
+    extraCost: 3,
+    steps: "1. Καθαρίστε και στεγνώστε καλά τα φύλλα από το σπανάκι, τοποθετώντας τα σε ένα ευρύχωρo σαλατιέρα.\n2. Κόψτε το τυρί σε μικρούς, ομοιόμορφους κύβους.\n3. Προσθέστε τους κύβους τυριού πάνω από το πράσινο σπανάκι.\n4. Ανακατέψτε απαλά ώστε να κατανεμηθούν τα υλικά ισiόρροπα σε όλη την επιφάνεια της σαλάτας."
+  },
+  {
+    id: "rec-6",
+    name: "Βελούδινη Σπιτική Ντοματόσουπα",
+    ingredients: ["Tomatoes", "Milk"],
+    extraCost: 2,
+    steps: "1. Πολτοποιήστε τις ντομάτες μέχρι να γίνουν λείος χυμός και ρίξτε τες σε ένα κατσαρολάκι.\n2. Ανάψτε τη φωτιά σε μέτρια ένταση και αφήστε τη ντομάτα να πάρει μια ελαφριά βράση.\n3. Χαμηλώστε τη θερμοκρασία και προσθέστε το γάλα ανακατεύοντας διαρκώς.\n4. Αφήστε το μείγμα να ζεσταθεί καλά χωρίς να κολλήσει στον πάτο της κατσαρόλας."
+  },
+  {
+    id: "rec-7",
+    name: "Κλασικά Ζυμαρικά με Αρωματική Σάλτσα Ντομάτας",
+    ingredients: ["Tomatoes", "Grains"],
+    extraCost: 2,
+    steps: "1. Βράστε τα ζυμαρικά σε άφθονο αλατισμένο νερό μέχρι να είναι έτοιμα.\n2. Σε ένα ξεχωριστό σκεύος, πολτοποιήστε τις ντομάτες και αφήστε τες να σιγοβράσουν ώστε να εξατμιστούν τα πολλά υγρά.\n3. Ενώστε τα στραγγισμένα ζυμαρικά με τη σπιτική σάλτσα ντομάτας.\n4. Ανακατέψτε καλά ώστε να απορροφήσουν τα αρώματα πριν το σερβίρισμα."
+  },
+  {
+    id: "rec-8",
+    name: "Κρεμώδη Scrambled Eggs με Γάλα",
+    ingredients: ["Eggs", "Milk"],
+    extraCost: 0,
+    steps: "1. Σπάστε τα αυγά σε ένα μπολ, προσθέστε μια κουταλιά γάλα και χτυπήστε τα καλά.\n2. Ζεσταίνετε ένα τηγάνι σε χαμηλή φωτιά με ελάχιστο βούτυρο ή λάδι.\n3. Ρίξτε το μείγμα των αυγών και αρχίστε να ανακατεύετε ασταμάτητα με μια σπάτουλα.\n4. Αποσύρйте από τη φωτιά ακριβώς πριν στεγνώσουν εντελώς, ώστε να παραμείνουν ζουμερά και κρεμώδη."
+  },
+  {
+    id: "rec-9",
+    name: "Ζεστές Αυγοφέτες (French Toast) Φούρνου/Τηγανιού",
+    ingredients: ["Eggs", "Milk", "Bread"],
+    extraCost: 1,
+    steps: "1. Σε ένα βαθύ πιάτο, χτυπήστε τα αυγά μαζί με λίγο γάλα μέχρι να ομογενοποιηθούν.\n2. Βουτήξτε τις φέτες ψωμιού στο μείγμα και αφήστε τες να το απορροφήσουν ελαφρώς και από τις δύο πλευρές.\n3. Ζεσταίνετε ένα τηγάνι και τοποθετήστε τις μουλιασμένες φέτες.\n4. Τηγανίστε τες μέχρι να αποκτήσουν ένα ωραίο, χρυσαφένιο χρώμα και στις δύο πλευρές."
+  },
+  {
+    id: "rec-10",
+    name: "Αρωματικό Ρύζι με Σοταρισμένο Σπανάκι και Ντομάτα",
+    ingredients: ["Grains", "Spinach", "Tomatoes"],
+    extraCost: 3,
+    steps: "1. Βράστε το ρύζι σε κατσαρόλα με νερό και λίγο αλάτι μέχρι να μαλακώσει, έπειτα στραγγίστε το.\n2. Σε ένα ευρύχωρο τηγάνι, σοτάρετε το σπανάκι μέχρι να μειωθεί σε όγκο.\n3. Προσθέστε τις ψιλοκομμένες ντομάτες στο ίδιο τηγάνι και αφήστε τα υλικά να δέσουν.\n4. Ενσωματώστε το έτοιμο ρύζι μέσα στο τηγάνι με τα λαχανικά και ανακατέψτε απαλά."
+  }
+];
 let profileDetails = {
   name: "",
   username: "",
@@ -1211,11 +1284,116 @@ screenContent.addEventListener("submit", (event) => {
 
     recipeBudget = selectedBudget;
     recipeServings = selectedServings;
-    status.textContent = "Recipe recommendations coming next!";
-    clearTimeout(recipeStatusTimeout);
-    recipeStatusTimeout = setTimeout(() => {
-      status.textContent = "";
-    }, 3500);
+    // 1. Φιλτράρισμα συνταγών βάσει budget
+    const matchedRecipes = recipesDatabase.filter(recipe => recipe.extraCost <= recipeBudget);
+
+    // 2. Δημιουργία της οθόνης αποτελεσμάτων
+    const resultsScreen = document.createElement("section");
+    resultsScreen.className = "recipes-screen";
+
+    // Προσθήκη κουμπιού Back επάνω αριστερά
+    const backButton = createProfileBackButton("Find Recipes");
+    resultsScreen.appendChild(backButton);
+
+    const heading = document.createElement("h2");
+    heading.textContent = matchedRecipes.length > 0 ? "Προτεινόμενες Συνταγές" : "Δεν βρέθηκαν συνταγές";
+
+    const subtitle = document.createElement("p");
+    subtitle.className = "recipes-subtitle";
+    subtitle.textContent = matchedRecipes.length > 0 
+      ? `Με βάση το μπατζετ σου (€${recipeBudget}), μπορείς να φτιάξεις τις παρακάτω συνταγές:`
+      : `Δυστυχώς δεν υπάρχει συνταγή εντός του μπατζετ των €${recipeBudget}. Δοκίμασε να αυξήσεις το μπατζετ!`;
+
+    resultsScreen.append(heading, subtitle);
+
+    // 3. Δημιουργία πλέγματος (grid) για τις κάρτες
+    const grid = document.createElement("div");
+    grid.className = "fridge-ingredient-grid";
+    grid.style.marginTop = "1.5rem";
+
+    matchedRecipes.forEach(recipe => {
+      const card = document.createElement("article");
+      card.className = "fridge-ingredient-card";
+      card.style.minHeight = "auto";
+      card.style.padding = "1.25rem";
+      card.style.cursor = "pointer"; // Κάνει την κάρτα να φαίνεται πατήσιμη
+
+      const title = document.createElement("h3");
+      title.className = "fridge-ingredient-name";
+      title.textContent = recipe.name;
+
+      const costBadge = document.createElement("span");
+      costBadge.className = "fridge-ingredient-expiration";
+      costBadge.textContent = recipe.extraCost === 0 ? "Δωρεάν (χωρίς επιπλέον υλικά)" : `Επιπλέον κόστος: €${recipe.extraCost}`;
+
+      const ingredientsList = document.createElement("p");
+      ingredientsList.style.fontSize = "0.875rem";
+      ingredientsList.style.marginTop = "0.75rem";
+      ingredientsList.style.color = "rgb(35 71 53 / 80%)";
+      ingredientsList.textContent = `Υλικά: ${recipe.ingredients.join(", ")}`;
+
+      card.append(title, costBadge, ingredientsList);
+
+      // Όταν ο χρήστης κάνει κλικ σε μια συνταγή, εμφανίζονται τα βήματα εκτέλεσης
+      
+        card.addEventListener("click", () => {
+        const detailScreen = document.createElement("section");
+        detailScreen.className = "recipes-screen";
+        
+        // Στυλ για το όμορφο πλαίσιο, τα χρώματα και τη στοίχιση
+        detailScreen.style.backgroundColor = "#f5eae3"; // Απαλό μπεζ-ροζ φόντο
+        detailScreen.style.padding = "2rem";
+        detailScreen.style.borderRadius = "16px";
+        detailScreen.style.maxWidth = "600px";
+        detailScreen.style.margin = "2rem auto";
+        detailScreen.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.05)";
+
+        const detailBack = createProfileBackButton();
+        detailBack.addEventListener("click", () => {
+          screenContent.replaceChildren(resultsScreen);
+        });
+
+        const detailHeading = document.createElement("h2");
+        detailHeading.textContent = recipe.name;
+        detailHeading.style.color = "#1b3b2b"; // Σκούρο πράσινο
+
+        const detailCost = document.createElement("p");
+        detailCost.className = "recipes-subtitle";
+        detailCost.textContent = recipe.extraCost === 0 ? "Επιπλέον κόστος: Δωρεάν" : `Επιπλέον κόστος: €${recipe.extraCost}`;
+        detailCost.style.color = "#234735";
+
+        const stepsHeading = document.createElement("h3");
+        stepsHeading.textContent = "Εκτέλεση Συνταγής";
+        stepsHeading.style.marginTop = "1.5rem";
+        stepsHeading.style.color = "#1b3b2b"; // Σκούρο πράσινο
+
+        const stepsText = document.createElement("p");
+        stepsText.style.whiteSpace = "pre-line"; 
+        stepsText.style.marginTop = "0.75rem";
+        stepsText.style.lineHeight = "1.6";
+        stepsText.style.color = "#234735"; // Σκούρο πράσινο γράμματα
+        stepsText.textContent = recipe.steps || "Δεν υπάρχουν διαθέσιμες οδηγίες εκτέλεσης.";
+
+        // Δημιουργία στοιχείου για το "Καλή όρεξη!" στο τέλος
+        const bonAppetit = document.createElement("p");
+        bonAppetit.textContent = "Καλή όρεξη! 😋";
+        bonAppetit.style.marginTop = "2rem";
+        bonAppetit.style.fontWeight = "bold";
+        bonAppetit.style.fontSize = "1.1rem";
+        bonAppetit.style.textAlign = "center";
+        bonAppetit.style.color = "#1b3b2b"; // Σκούρο πράσινο
+
+        detailScreen.append(detailBack, detailHeading, detailCost, stepsHeading, stepsText, bonAppetit);
+        screenContent.replaceChildren(detailScreen);
+      });
+
+      grid.appendChild(card);
+    });
+
+    resultsScreen.appendChild(grid);
+
+    // 4. Αντικατάσταση οθόνης
+    screenContent.replaceChildren(resultsScreen);
     return;
   }
 
