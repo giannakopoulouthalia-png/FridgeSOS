@@ -26,6 +26,52 @@ const categoryIcons = {
   Grains: "🌾",
   Other: "🥫",
 };
+const weekdays = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+const cookingAvailabilitySettings = {
+  earliest: "07:00",
+  latest: "22:00",
+  travelAfterClass: 30,
+  preparationBeforeClass: 30,
+  minimumWindow: 30,
+};
+const mealCategories = [
+  {
+    title: "Breakfast Time",
+    emoji: "🥐",
+    start: 7 * 60,
+    end: 11 * 60,
+    description: "Start your day with something quick.",
+  },
+  {
+    title: "Lunch Time",
+    emoji: "🍽️",
+    start: 11 * 60,
+    end: 15 * 60,
+    description: "Take a break and prepare a delicious lunch.",
+  },
+  {
+    title: "Snack Time",
+    emoji: "🥪",
+    start: 15 * 60,
+    end: 18 * 60,
+    description: "A little bite between activities.",
+  },
+  {
+    title: "Dinner Time",
+    emoji: "🍝",
+    start: 18 * 60,
+    end: 22 * 60,
+    description: "Wind down with a homemade meal.",
+  },
+];
 const ingredients = [
   { id: "spinach", category: "Vegetables", name: "Spinach", expiresInDays: 1, icon: "🥬" },
   { id: "tomatoes", category: "Vegetables", name: "Tomatoes", expiresInDays: 2, icon: "🍅" },
@@ -34,6 +80,9 @@ const ingredients = [
 let nextIngredientId = 1;
 let editingIngredientId = null;
 let deletingIngredientId = null;
+const studentClasses = [];
+let nextClassId = 1;
+let editingClassId = null;
 let dietaryPreference = null;
 let preferredCookingTime = null;
 let cookingSkillLevel = null;
@@ -1274,12 +1323,674 @@ function createPreferenceScreen({
   return preferenceScreen;
 }
 
-function showScreen(screenName) {
+function createPlannerSelect(name, labelText) {
+  const label = document.createElement("label");
+  const select = document.createElement("select");
+  const placeholder = document.createElement("option");
+
+  label.htmlFor = `planner-${name}`;
+  label.textContent = labelText;
+  select.id = `planner-${name}`;
+  select.name = name;
+  select.required = true;
+  placeholder.value = "";
+  placeholder.textContent = "Choose a weekday";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  select.append(placeholder);
+
+  for (const weekday of weekdays) {
+    const option = document.createElement("option");
+    option.value = weekday;
+    option.textContent = weekday;
+    select.append(option);
+  }
+
+  return { label, select };
+}
+
+function createClassTimeField(name, labelText) {
+  const label = document.createElement("label");
+  const input = document.createElement("input");
+
+  label.htmlFor = `planner-${name}`;
+  label.textContent = labelText;
+  input.id = `planner-${name}`;
+  input.name = name;
+  input.type = "time";
+  input.required = true;
+  return { label, input };
+}
+
+function createCookingSettingField(setting, labelText, type, value, minimum, maximum) {
+  const field = document.createElement("div");
+  const label = document.createElement("label");
+  const input = document.createElement("input");
+
+  field.className = "planner-setting-field";
+  label.htmlFor = `planner-setting-${setting}`;
+  label.textContent = labelText;
+  input.id = `planner-setting-${setting}`;
+  input.name = setting;
+  input.type = type;
+  input.required = true;
+  input.value = String(value);
+  if (type === "number") {
+    input.min = String(minimum);
+    input.max = String(maximum);
+    input.step = "1";
+  }
+  field.append(label, input);
+  return { field, input };
+}
+
+function getSortedStudentClasses() {
+  return [...studentClasses].sort(
+    (first, second) =>
+      weekdays.indexOf(first.day) - weekdays.indexOf(second.day) ||
+      first.start.localeCompare(second.start) ||
+      first.end.localeCompare(second.end),
+  );
+}
+
+function timeToMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function formatMinutesAsTime(minutes) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60,
+  ).padStart(2, "0")}`;
+}
+
+function getCookingWindowsForDay(day) {
+  if (studentClasses.length === 0) {
+    return [];
+  }
+
+  const earliest = timeToMinutes(cookingAvailabilitySettings.earliest);
+  const latest = timeToMinutes(cookingAvailabilitySettings.latest);
+  const unavailable = studentClasses
+    .filter((studentClass) => studentClass.day === day)
+    .map((studentClass) => ({
+      start: Math.max(
+        0,
+        timeToMinutes(studentClass.start) -
+          cookingAvailabilitySettings.preparationBeforeClass,
+      ),
+      end: Math.min(
+        24 * 60,
+        timeToMinutes(studentClass.end) + cookingAvailabilitySettings.travelAfterClass,
+      ),
+    }))
+    .sort((first, second) => first.start - second.start || first.end - second.end);
+  const mergedUnavailable = [];
+
+  for (const period of unavailable) {
+    const previous = mergedUnavailable.at(-1);
+    if (previous && period.start <= previous.end) {
+      previous.end = Math.max(previous.end, period.end);
+    } else {
+      mergedUnavailable.push({ ...period });
+    }
+  }
+
+  const freeIntervals = [];
+  let cursor = earliest;
+  for (const period of mergedUnavailable) {
+    const blockedStart = Math.max(period.start, earliest);
+    const blockedEnd = Math.min(period.end, latest);
+    if (blockedEnd <= earliest || blockedStart >= latest) {
+      continue;
+    }
+    if (blockedStart > cursor) {
+      freeIntervals.push({ start: cursor, end: blockedStart });
+    }
+    cursor = Math.max(cursor, blockedEnd);
+  }
+  if (cursor < latest) {
+    freeIntervals.push({ start: cursor, end: latest });
+  }
+
+  return freeIntervals.flatMap((interval) =>
+    mealCategories.flatMap((category) => {
+      const start = Math.max(interval.start, category.start);
+      const end = Math.min(interval.end, category.end);
+      if (end - start < cookingAvailabilitySettings.minimumWindow) {
+        return [];
+      }
+      return [{
+        ...category,
+        start,
+        end,
+      }];
+    }),
+  );
+}
+
+function renderCookingAvailability(container) {
+  const dailyWindows = weekdays.map((day) => ({
+    day,
+    windows: getCookingWindowsForDay(day),
+  }));
+  const hasClasses = studentClasses.length > 0;
+  const emptyPrompt = document.createElement("p");
+  emptyPrompt.className = "planner-availability-empty";
+  emptyPrompt.hidden = hasClasses;
+  emptyPrompt.textContent =
+    "Add a class manually or import your timetable above to see suggested cooking times.";
+
+  const dayGroups = dailyWindows.map(({ day, windows }, index) => {
+    const daySection = document.createElement("section");
+    const header = document.createElement("div");
+    const dayHeading = document.createElement("h4");
+    const count = document.createElement("span");
+    const cards = document.createElement("div");
+
+    daySection.className = `planner-availability-day ${
+      index % 2 === 0 ? "is-lilac" : "is-blue"
+    }`;
+    dayHeading.className = "planner-availability-day-name";
+    dayHeading.textContent = day;
+    header.className = "planner-availability-day-header";
+    count.className = "planner-availability-count";
+    count.textContent = `${windows.length} ${
+      windows.length === 1 ? "window" : "windows"
+    }`;
+    cards.className = "planner-availability-cards";
+
+    if (windows.length === 0) {
+      const emptyDay = document.createElement("p");
+      emptyDay.className = "planner-no-windows";
+      emptyDay.textContent = "No suitable cooking window found.";
+      cards.append(emptyDay);
+    } else {
+      for (const window of windows) {
+        const card = document.createElement("article");
+        const icon = document.createElement("span");
+        const details = document.createElement("div");
+        const category = document.createElement("h5");
+        const time = document.createElement("p");
+        const description = document.createElement("p");
+
+        card.className = "planner-availability-card";
+        icon.className = "planner-availability-emojis";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = `👩‍🍳 ${window.emoji}`;
+        details.className = "planner-availability-details";
+        category.className = "planner-availability-category";
+        category.textContent = window.title;
+        time.className = "planner-availability-time";
+        time.textContent = `${formatMinutesAsTime(window.start)} – ${formatMinutesAsTime(
+          window.end,
+        )}`;
+        description.className = "planner-availability-description";
+        description.textContent = window.description;
+        details.append(category, time, description);
+        card.append(icon, details);
+        cards.append(card);
+      }
+    }
+
+    header.append(dayHeading, count);
+    daySection.append(header, cards);
+    return daySection;
+  });
+
+  container.replaceChildren(emptyPrompt, ...dayGroups);
+}
+
+function updateCookingAvailabilitySettings() {
+  const form = screenContent.querySelector('[data-form="planner-settings"]');
+  const status = form?.querySelector(".planner-settings-status");
+  if (!form || !status) {
+    return;
+  }
+
+  const inputs = {
+    earliest: form.querySelector("#planner-setting-earliest"),
+    latest: form.querySelector("#planner-setting-latest"),
+    travelAfterClass: form.querySelector("#planner-setting-travelAfterClass"),
+    preparationBeforeClass: form.querySelector(
+      "#planner-setting-preparationBeforeClass",
+    ),
+    minimumWindow: form.querySelector("#planner-setting-minimumWindow"),
+  };
+  const invalidInput = Object.values(inputs).find((input) => !input.validity.valid);
+  if (invalidInput) {
+    status.textContent = "Enter valid times and whole-minute values for all settings.";
+    status.classList.add("is-error");
+    return;
+  }
+
+  if (timeToMinutes(inputs.earliest.value) >= timeToMinutes(inputs.latest.value)) {
+    status.textContent = "Latest cooking time must be later than earliest cooking time.";
+    status.classList.add("is-error");
+    return;
+  }
+
+  Object.assign(cookingAvailabilitySettings, {
+    earliest: inputs.earliest.value,
+    latest: inputs.latest.value,
+    travelAfterClass: Number(inputs.travelAfterClass.value),
+    preparationBeforeClass: Number(inputs.preparationBeforeClass.value),
+    minimumWindow: Number(inputs.minimumWindow.value),
+  });
+  status.textContent = "";
+  status.classList.remove("is-error");
+  renderCookingAvailability(
+    screenContent.querySelector("#planner-availability-results"),
+  );
+}
+
+function renderStudentSchedule(schedule, count) {
+  const sortedClasses = getSortedStudentClasses();
+  count.textContent = `${studentClasses.length} ${
+    studentClasses.length === 1 ? "class" : "classes"
+  }`;
+
+  if (sortedClasses.length === 0) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "planner-empty-state";
+    emptyState.textContent =
+      "Your weekly schedule is empty. Import a timetable or add your first class.";
+    schedule.append(emptyState);
+    return;
+  }
+
+  for (const weekday of weekdays) {
+    const dayClasses = sortedClasses.filter((studentClass) => studentClass.day === weekday);
+    if (dayClasses.length === 0) {
+      continue;
+    }
+
+    const dayGroup = document.createElement("section");
+    const heading = document.createElement("h3");
+    const list = document.createElement("div");
+    dayGroup.className = "planner-day-group";
+    heading.className = "planner-day-heading";
+    heading.textContent = weekday;
+    list.className = "planner-class-list";
+
+    for (const studentClass of dayClasses) {
+      const card = document.createElement("article");
+      const details = document.createElement("div");
+      const course = document.createElement("h4");
+      const time = document.createElement("p");
+      const actions = document.createElement("div");
+      const editButton = document.createElement("button");
+      const deleteButton = document.createElement("button");
+
+      card.className = "planner-class-card";
+      details.className = "planner-class-details";
+      course.className = "planner-course-name";
+      course.textContent = studentClass.course;
+      time.className = "planner-class-time";
+      time.textContent = `${studentClass.start} – ${studentClass.end}`;
+      actions.className = "planner-class-actions";
+      editButton.type = "button";
+      editButton.className = "planner-action";
+      editButton.dataset.classAction = "edit";
+      editButton.dataset.classId = String(studentClass.id);
+      editButton.textContent = "Edit";
+      editButton.setAttribute("aria-label", `Edit ${studentClass.course}`);
+      deleteButton.type = "button";
+      deleteButton.className = "planner-action planner-delete-action";
+      deleteButton.dataset.classAction = "delete";
+      deleteButton.dataset.classId = String(studentClass.id);
+      deleteButton.textContent = "Delete";
+      deleteButton.setAttribute("aria-label", `Delete ${studentClass.course}`);
+      details.append(course, time);
+      actions.append(editButton, deleteButton);
+      card.append(details, actions);
+      list.append(card);
+    }
+
+    dayGroup.append(heading, list);
+    schedule.append(dayGroup);
+  }
+}
+
+function createStudentPlannerScreen() {
+  const plannerScreen = document.createElement("section");
+  const heading = document.createElement("h2");
+  const intro = document.createElement("p");
+  const importSection = document.createElement("section");
+  const importHeading = document.createElement("h3");
+  const importCopy = document.createElement("p");
+  const fileLabel = document.createElement("label");
+  const fileInput = document.createElement("input");
+  const importStatus = document.createElement("p");
+  const manualSection = document.createElement("section");
+  const manualHeading = document.createElement("h3");
+  const manualForm = document.createElement("form");
+  const settingsSection = document.createElement("section");
+  const settingsHeading = document.createElement("h3");
+  const settingsForm = document.createElement("form");
+  const settingsGrid = document.createElement("div");
+  const settingsStatus = document.createElement("p");
+  const earliestSetting = createCookingSettingField(
+    "earliest",
+    "Earliest cooking time",
+    "time",
+    cookingAvailabilitySettings.earliest,
+  );
+  const latestSetting = createCookingSettingField(
+    "latest",
+    "Latest cooking time",
+    "time",
+    cookingAvailabilitySettings.latest,
+  );
+  const travelSetting = createCookingSettingField(
+    "travelAfterClass",
+    "Travel after classes (minutes)",
+    "number",
+    cookingAvailabilitySettings.travelAfterClass,
+    0,
+    1440,
+  );
+  const preparationSetting = createCookingSettingField(
+    "preparationBeforeClass",
+    "Preparation before classes (minutes)",
+    "number",
+    cookingAvailabilitySettings.preparationBeforeClass,
+    0,
+    1440,
+  );
+  const minimumSetting = createCookingSettingField(
+    "minimumWindow",
+    "Minimum cooking window (minutes)",
+    "number",
+    cookingAvailabilitySettings.minimumWindow,
+    1,
+    1440,
+  );
+  const availabilitySection = document.createElement("section");
+  const availabilityHeading = document.createElement("h3");
+  const availabilitySubtitle = document.createElement("p");
+  const availabilityDisclaimer = document.createElement("p");
+  const availabilityResults = document.createElement("div");
+  const courseLabel = document.createElement("label");
+  const courseInput = document.createElement("input");
+  const { label: dayLabel, select: daySelect } = createPlannerSelect("day", "Weekday");
+  const { label: startLabel, input: startInput } = createClassTimeField(
+    "start",
+    "Start time",
+  );
+  const { label: endLabel, input: endInput } = createClassTimeField("end", "End time");
+  const formActions = document.createElement("div");
+  const submitButton = document.createElement("button");
+  const cancelButton = document.createElement("button");
+  const scheduleSection = document.createElement("section");
+  const scheduleHeader = document.createElement("div");
+  const scheduleHeading = document.createElement("h3");
+  const classCount = document.createElement("span");
+  const schedule = document.createElement("div");
+
+  plannerScreen.className = "planner-screen";
+  plannerScreen.append(createProfileBackButton());
+  heading.className = "planner-title";
+  heading.textContent = "Smart Student Planner";
+  intro.className = "planner-intro";
+  intro.textContent = "Keep your weekly classes in one easy-to-read place.";
+  importSection.className = "planner-panel planner-import-panel";
+  importHeading.textContent = "Import Your Timetable";
+  importCopy.className = "planner-help-copy";
+  importCopy.textContent =
+    "Choose a .csv file with these columns: Day,Start,End,Course. Importing replaces your current schedule.";
+  fileLabel.className = "planner-file-label";
+  fileLabel.htmlFor = "planner-csv-file";
+  fileLabel.textContent = "Choose CSV file";
+  fileInput.id = "planner-csv-file";
+  fileInput.type = "file";
+  fileInput.accept = ".csv,text/csv";
+  fileInput.className = "planner-file-input";
+  importStatus.className = "planner-status";
+  importStatus.setAttribute("aria-live", "polite");
+  importStatus.setAttribute("role", "status");
+  importSection.append(importHeading, importCopy, fileLabel, fileInput, importStatus);
+
+  manualSection.className = "planner-panel";
+  manualHeading.textContent = "Enter Manually";
+  manualForm.className = "planner-form";
+  manualForm.dataset.form = "planner-class";
+  courseLabel.htmlFor = "planner-course";
+  courseLabel.textContent = "Class name";
+  courseInput.id = "planner-course";
+  courseInput.name = "course";
+  courseInput.type = "text";
+  courseInput.maxLength = 100;
+  courseInput.placeholder = "e.g. Algorithms";
+  courseInput.required = true;
+  formActions.className = "planner-form-actions";
+  submitButton.className = "planner-submit";
+  submitButton.type = "submit";
+  submitButton.textContent = editingClassId ? "Save Changes" : "Add Class";
+  cancelButton.className = "planner-cancel";
+  cancelButton.type = "button";
+  cancelButton.dataset.classAction = "cancel-edit";
+  cancelButton.textContent = "Cancel";
+  cancelButton.hidden = editingClassId === null;
+  formActions.append(submitButton, cancelButton);
+  manualForm.append(
+    dayLabel,
+    daySelect,
+    courseLabel,
+    courseInput,
+    startLabel,
+    startInput,
+    endLabel,
+    endInput,
+    formActions,
+  );
+  manualSection.append(manualHeading, manualForm);
+
+  settingsSection.className = "planner-panel planner-settings-panel";
+  settingsHeading.textContent = "Cooking Availability Settings";
+  settingsForm.className = "planner-settings-form";
+  settingsForm.dataset.form = "planner-settings";
+  settingsGrid.className = "planner-settings-grid";
+  settingsGrid.append(
+    earliestSetting.field,
+    latestSetting.field,
+    travelSetting.field,
+    preparationSetting.field,
+    minimumSetting.field,
+  );
+  settingsStatus.className = "planner-settings-status";
+  settingsStatus.setAttribute("aria-live", "polite");
+  settingsForm.append(settingsGrid, settingsStatus);
+  settingsSection.append(settingsHeading, settingsForm);
+
+  scheduleSection.className = "planner-panel planner-schedule-panel";
+  scheduleHeader.className = "planner-schedule-header";
+  scheduleHeading.textContent = "Weekly Schedule";
+  classCount.className = "planner-class-count";
+  scheduleHeader.append(scheduleHeading, classCount);
+  schedule.className = "planner-schedule";
+  renderStudentSchedule(schedule, classCount);
+  scheduleSection.append(scheduleHeader, schedule);
+  availabilitySection.className = "planner-availability-section";
+  availabilityHeading.className = "planner-availability-title";
+  availabilityHeading.textContent = "Your Cooking Availability";
+  availabilitySubtitle.className = "planner-availability-subtitle";
+  availabilitySubtitle.textContent =
+    "Find your perfect time to cook between classes!";
+  availabilityDisclaimer.className = "planner-availability-disclaimer";
+  availabilityDisclaimer.textContent =
+    "Suggested available times based on your university classes; they are not guaranteed free time.";
+  availabilityResults.className = "planner-availability-results";
+  availabilityResults.id = "planner-availability-results";
+  renderCookingAvailability(availabilityResults);
+  availabilitySection.append(
+    availabilityHeading,
+    availabilitySubtitle,
+    availabilityDisclaimer,
+    availabilityResults,
+  );
+  plannerScreen.append(
+    heading,
+    intro,
+    importSection,
+    manualSection,
+    settingsSection,
+    scheduleSection,
+    availabilitySection,
+  );
+
+  if (editingClassId !== null) {
+    const studentClass = studentClasses.find((item) => item.id === editingClassId);
+    if (studentClass) {
+      daySelect.value = studentClass.day;
+      courseInput.value = studentClass.course;
+      startInput.value = studentClass.start;
+      endInput.value = studentClass.end;
+    }
+  }
+
+  return plannerScreen;
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let insideQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (insideQuotes) {
+      if (character === '"' && text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (character === '"') {
+        insideQuotes = false;
+      } else {
+        field += character;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      if (field.length > 0) {
+        throw new Error("The CSV contains a misplaced quotation mark.");
+      }
+      insideQuotes = true;
+    } else if (character === ",") {
+      row.push(field);
+      field = "";
+    } else if (character === "\n" || character === "\r") {
+      row.push(field);
+      if (row.some((cell) => cell.trim() !== "")) {
+        rows.push(row);
+      }
+      row = [];
+      field = "";
+      if (character === "\r" && text[index + 1] === "\n") {
+        index += 1;
+      }
+    } else {
+      field += character;
+    }
+  }
+
+  if (insideQuotes) {
+    throw new Error("The CSV contains an unclosed quoted field.");
+  }
+  row.push(field);
+  if (row.some((cell) => cell.trim() !== "")) {
+    rows.push(row);
+  }
+  return rows;
+}
+
+function validateStudentClass(day, start, end, course) {
+  const normalizedDay = weekdays.find(
+    (weekday) => weekday.toLocaleLowerCase() === day.toLocaleLowerCase(),
+  );
+  const validTime = (time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+
+  if (!normalizedDay) {
+    return { error: `Invalid weekday "${day}". Use Monday through Sunday.` };
+  }
+  if (!validTime(start) || !validTime(end)) {
+    return { error: "Times must use the 24-hour HH:MM format." };
+  }
+  if (end <= start) {
+    return { error: "End time must be later than start time." };
+  }
+  if (!course) {
+    return { error: "Class name cannot be empty." };
+  }
+  return {
+    studentClass: {
+      day: normalizedDay,
+      start,
+      end,
+      course,
+    },
+  };
+}
+
+function parseStudentTimetable(text) {
+  const rows = parseCsvRows(text.replace(/^\uFEFF/, ""));
+  const expectedHeaders = ["Day", "Start", "End", "Course"];
+
+  if (
+    rows.length === 0 ||
+    rows[0].length !== expectedHeaders.length ||
+    rows[0].some((header, index) => header !== expectedHeaders[index])
+  ) {
+    throw new Error("The first row must contain exactly: Day,Start,End,Course.");
+  }
+  if (rows.length === 1) {
+    throw new Error("The CSV has no class rows to import.");
+  }
+
+  const importedClasses = [];
+  const errors = [];
+  for (const [index, row] of rows.slice(1).entries()) {
+    const rowNumber = index + 2;
+    if (row.length !== expectedHeaders.length) {
+      errors.push(`Row ${rowNumber}: expected 4 columns.`);
+      continue;
+    }
+
+    const [day, start, end, course] = row.map((value) => value.trim());
+    const validation = validateStudentClass(day, start, end, course);
+    if (validation.error) {
+      errors.push(`Row ${rowNumber}: ${validation.error}`);
+    } else {
+      importedClasses.push(validation.studentClass);
+    }
+  }
+
+  if (errors.length > 0) {
+    const shownErrors = errors.slice(0, 5);
+    if (errors.length > shownErrors.length) {
+      shownErrors.push(`And ${errors.length - shownErrors.length} more error(s).`);
+    }
+    throw new Error(shownErrors.join(" "));
+  }
+  if (importedClasses.length === 0) {
+    throw new Error("The CSV has no class rows to import.");
+  }
+  return importedClasses;
+}
+
+function renderScreen(screenName) {
+  if (screenName !== "Smart Student Planner") {
+    editingClassId = null;
+  }
+
   if (screenName === "Home") {
     screenContent.classList.remove(
       "is-fridge-screen",
       "is-profile-screen",
       "is-dietary-screen",
+      "is-planner-screen",
     );
     screenContent.replaceChildren(
       ...homeScreenContent.map((element) => element.cloneNode(true)),
@@ -1290,7 +2001,11 @@ function showScreen(screenName) {
   }
 
   if (screenName === "My Fridge") {
-    screenContent.classList.remove("is-profile-screen", "is-dietary-screen");
+    screenContent.classList.remove(
+      "is-profile-screen",
+      "is-dietary-screen",
+      "is-planner-screen",
+    );
     screenContent.classList.add("is-fridge-screen");
     const fridgeScreen = document.createElement("section");
     const backButton = document.createElement("button");
@@ -1323,43 +2038,58 @@ function showScreen(screenName) {
     return;
   }
 
+  if (screenName === "Smart Student Planner") {
+    screenContent.classList.remove(
+      "is-fridge-screen",
+      "is-profile-screen",
+      "is-dietary-screen",
+    );
+    screenContent.classList.add("is-planner-screen");
+    screenContent.replaceChildren(createStudentPlannerScreen());
+    return;
+  }
+
   if (screenName === "Profile") {
-    screenContent.classList.remove("is-fridge-screen", "is-dietary-screen");
+    screenContent.classList.remove(
+      "is-fridge-screen",
+      "is-dietary-screen",
+      "is-planner-screen",
+    );
     screenContent.classList.add("is-profile-screen");
     screenContent.replaceChildren(createProfileScreen());
     return;
   }
 
   if (screenName === "Edit Profile") {
-    screenContent.classList.remove("is-fridge-screen");
+    screenContent.classList.remove("is-fridge-screen", "is-planner-screen");
     screenContent.classList.add("is-profile-screen", "is-dietary-screen");
     screenContent.replaceChildren(createEditProfileScreen());
     return;
   }
 
   if (screenName === "Dietary Preferences") {
-    screenContent.classList.remove("is-fridge-screen");
+    screenContent.classList.remove("is-fridge-screen", "is-planner-screen");
     screenContent.classList.add("is-profile-screen", "is-dietary-screen");
     screenContent.replaceChildren(createDietaryPreferencesScreen());
     return;
   }
 
   if (screenName === "Preferred Cooking Time") {
-    screenContent.classList.remove("is-fridge-screen");
+    screenContent.classList.remove("is-fridge-screen", "is-planner-screen");
     screenContent.classList.add("is-profile-screen", "is-dietary-screen");
     screenContent.replaceChildren(createCookingTimeScreen());
     return;
   }
 
   if (screenName === "Food Allergies") {
-    screenContent.classList.remove("is-fridge-screen");
+    screenContent.classList.remove("is-fridge-screen", "is-planner-screen");
     screenContent.classList.add("is-profile-screen", "is-dietary-screen");
     screenContent.replaceChildren(createFoodAllergiesScreen());
     return;
   }
 
   if (screenName === "Cooking Skill Level") {
-    screenContent.classList.remove("is-fridge-screen");
+    screenContent.classList.remove("is-fridge-screen", "is-planner-screen");
     screenContent.classList.add("is-profile-screen", "is-dietary-screen");
     screenContent.replaceChildren(createCookingSkillScreen());
     return;
@@ -1370,6 +2100,7 @@ function showScreen(screenName) {
       "is-fridge-screen",
       "is-profile-screen",
       "is-dietary-screen",
+      "is-planner-screen",
     );
     screenContent.replaceChildren(createRecipesScreen());
     return;
@@ -1380,6 +2111,7 @@ function showScreen(screenName) {
       "is-fridge-screen",
       "is-profile-screen",
       "is-dietary-screen",
+      "is-planner-screen",
     );
     screenContent.replaceChildren(createSavedRecipesScreen());
     return;
@@ -1389,12 +2121,18 @@ function showScreen(screenName) {
     "is-fridge-screen",
     "is-profile-screen",
     "is-dietary-screen",
+    "is-planner-screen",
   );
   const heading = document.createElement("h2");
   const placeholder = document.createElement("p");
   heading.textContent = screenName;
   placeholder.textContent = "Coming Soon";
   screenContent.replaceChildren(heading, placeholder);
+}
+
+function showScreen(screenName) {
+  renderScreen(screenName);
+  screenContent.scrollTop = 0;
 }
 
 function setMenuOpen(isOpen) {
@@ -1439,6 +2177,28 @@ navigation.addEventListener("click", (event) => {
 });
 
 screenContent.addEventListener("click", (event) => {
+  const budgetNoticeClose = event.target.closest("[data-budget-notice-close]");
+
+  if (budgetNoticeClose) {
+    const budgetCard = budgetNoticeClose.closest(".budget-shortcut");
+    const notice = budgetCard.querySelector(".budget-coming-soon");
+    const openButton = budgetCard.querySelector("[data-budget-notice-open]");
+    notice.hidden = true;
+    openButton.setAttribute("aria-expanded", "false");
+    openButton.focus();
+    return;
+  }
+
+  const budgetNoticeOpen = event.target.closest("[data-budget-notice-open]");
+
+  if (budgetNoticeOpen) {
+    const budgetCard = budgetNoticeOpen.closest(".budget-shortcut");
+    const notice = budgetCard.querySelector(".budget-coming-soon");
+    notice.hidden = false;
+    budgetNoticeOpen.setAttribute("aria-expanded", "true");
+    return;
+  }
+
   const removeAllergyButton = event.target.closest("[data-remove-allergy]");
 
   if (removeAllergyButton) {
@@ -1516,6 +2276,39 @@ screenContent.addEventListener("click", (event) => {
     return;
   }
 
+  const classAction = event.target.closest("[data-class-action]");
+  if (classAction) {
+    const action = classAction.dataset.classAction;
+    const classId = Number(classAction.dataset.classId);
+
+    if (action === "cancel-edit") {
+      editingClassId = null;
+      showScreen("Smart Student Planner");
+      screenContent.querySelector("#planner-course")?.focus({ preventScroll: true });
+      return;
+    }
+
+    const classIndex = studentClasses.findIndex(
+      (studentClass) => studentClass.id === classId,
+    );
+    if (classIndex === -1) {
+      return;
+    }
+
+    if (action === "edit") {
+      editingClassId = classId;
+      showScreen("Smart Student Planner");
+      screenContent.querySelector("#planner-course")?.focus({ preventScroll: true });
+    } else if (action === "delete") {
+      studentClasses.splice(classIndex, 1);
+      if (editingClassId === classId) {
+        editingClassId = null;
+      }
+      showScreen("Smart Student Planner");
+    }
+    return;
+  }
+
   if (event.target.closest(".add-food-button")) {
     openAddFoodDialog();
     return;
@@ -1543,6 +2336,56 @@ screenContent.addEventListener("click", (event) => {
 });
 
 screenContent.addEventListener("submit", (event) => {
+  const settingsForm = event.target.closest('[data-form="planner-settings"]');
+  if (settingsForm) {
+    event.preventDefault();
+    updateCookingAvailabilitySettings();
+    return;
+  }
+
+  const plannerForm = event.target.closest('[data-form="planner-class"]');
+
+  if (plannerForm) {
+    event.preventDefault();
+    const dayInput = plannerForm.querySelector("#planner-day");
+    const courseInput = plannerForm.querySelector("#planner-course");
+    const startInput = plannerForm.querySelector("#planner-start");
+    const endInput = plannerForm.querySelector("#planner-end");
+
+    if (!plannerForm.reportValidity()) {
+      return;
+    }
+
+    const validation = validateStudentClass(
+      dayInput.value,
+      startInput.value,
+      endInput.value,
+      courseInput.value.trim(),
+    );
+    if (validation.error) {
+      endInput.setCustomValidity(validation.error);
+      endInput.reportValidity();
+      return;
+    }
+
+    endInput.setCustomValidity("");
+    if (editingClassId === null) {
+      studentClasses.push({ id: nextClassId++, ...validation.studentClass });
+    } else {
+      const studentClass = studentClasses.find((item) => item.id === editingClassId);
+      if (!studentClass) {
+        editingClassId = null;
+        showScreen("Smart Student Planner");
+        return;
+      }
+      Object.assign(studentClass, validation.studentClass);
+      editingClassId = null;
+    }
+    showScreen("Smart Student Planner");
+    screenContent.querySelector("#planner-course")?.focus({ preventScroll: true });
+    return;
+  }
+
   const recipeForm = event.target.closest('[data-form="recipe-personalization"]');
 
   if (recipeForm) {
@@ -1697,6 +2540,67 @@ screenContent.addEventListener("change", (event) => {
   if (event.target.matches("#profile-gender")) {
     screenContent.querySelector(".edit-profile-self-description").hidden =
       event.target.value !== "Self-describe";
+  }
+
+  if (event.target.matches("#planner-day, #planner-start, #planner-end")) {
+    event.target.setCustomValidity("");
+  }
+
+  if (event.target.matches('[data-form="planner-settings"] input')) {
+    updateCookingAvailabilitySettings();
+  }
+});
+
+screenContent.addEventListener("input", (event) => {
+  if (event.target.matches("#planner-course, #planner-start, #planner-end")) {
+    event.target.setCustomValidity("");
+  }
+});
+
+screenContent.addEventListener("change", async (event) => {
+  if (!event.target.matches("#planner-csv-file")) {
+    return;
+  }
+
+  const fileInput = event.target;
+  const status = screenContent.querySelector(".planner-status");
+  const file = fileInput.files?.[0];
+  if (!file || !status) {
+    return;
+  }
+
+  status.classList.remove("is-error", "is-success");
+  if (!file.name.toLocaleLowerCase().endsWith(".csv")) {
+    status.textContent = "Choose a .csv file to import your timetable.";
+    status.classList.add("is-error");
+    fileInput.value = "";
+    return;
+  }
+
+  try {
+    const importedClasses = parseStudentTimetable(await file.text());
+    studentClasses.splice(
+      0,
+      studentClasses.length,
+      ...importedClasses.map((studentClass) => ({
+        id: nextClassId++,
+        ...studentClass,
+      })),
+    );
+    editingClassId = null;
+    showScreen("Smart Student Planner");
+    const updatedStatus = screenContent.querySelector(".planner-status");
+    updatedStatus.textContent = `Imported ${importedClasses.length} ${
+      importedClasses.length === 1 ? "class" : "classes"
+    } successfully.`;
+    updatedStatus.classList.add("is-success");
+  } catch (error) {
+    status.textContent =
+      error instanceof Error
+        ? error.message
+        : "The CSV file could not be read. Please try another file.";
+    status.classList.add("is-error");
+    fileInput.value = "";
   }
 });
 

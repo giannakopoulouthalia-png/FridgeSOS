@@ -103,6 +103,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg>
           <span>Saved Recipes</span>
         </button>
+        <button class="navigation-item" type="button" data-screen="Smart Student Planner">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4m8-4v4M3 9h18m-13 4h3m-3 4h3m4-4h3m-3 4h3" /></svg>
+          <span>Smart Student Planner</span>
+        </button>
         <button class="navigation-item" type="button" data-screen="Profile">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
           <span>Profile</span>
@@ -156,6 +160,58 @@
             <path d="M5 12h14m-6-6 6 6-6 6" />
           </svg>
         </button>
+      </section>
+      <section class="planner-shortcut" aria-labelledby="planner-shortcut-title">
+        <div class="planner-shortcut-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="17" rx="2" />
+            <path d="M8 2v4m8-4v4M3 9h18m-13 4h3m-3 4h3m4-4h3m-3 4h3" />
+          </svg>
+        </div>
+        <div class="planner-shortcut-details">
+          <h2 id="planner-shortcut-title">Smart Student Planner</h2>
+          <p>Your classes, your cooking time, your budget.</p>
+        </div>
+        <button class="planner-shortcut-button" type="button" data-screen="Smart Student Planner">
+          <span>Open My Planner</span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" />
+          </svg>
+        </button>
+      </section>
+      <section class="planner-shortcut budget-shortcut" aria-labelledby="budget-shortcut-title">
+        <div class="planner-shortcut-icon budget-shortcut-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H20a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5.5A2.5 2.5 0 0 1 3 17.5z" />
+            <path d="M3 8h15a2 2 0 0 1 2 2v3h-4a2 2 0 0 0 0 4h4m-4-4h.01M7 5V4a1 1 0 0 1 1-1h10" />
+          </svg>
+        </div>
+        <div class="planner-shortcut-details">
+          <h2 id="budget-shortcut-title">Weekly Budget Predictor</h2>
+          <p class="budget-shortcut-subtitle">Plan your meals. Predict your spending.</p>
+        </div>
+        <button
+          class="planner-shortcut-button"
+          type="button"
+          data-budget-notice-open
+          aria-expanded="false"
+        >
+          <span>View My Budget</span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" />
+          </svg>
+        </button>
+        <div class="budget-coming-soon" role="status" hidden>
+          <p>Weekly Budget Forecast — Coming Soon!</p>
+          <button
+            class="budget-coming-soon-close"
+            type="button"
+            data-budget-notice-close
+            aria-label="Close Coming Soon message"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
       </section>
       <section class="use-first" aria-labelledby="use-first-heading">
         <div class="use-first-header">
